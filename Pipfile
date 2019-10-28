@@ -1,0 +1,14 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+
+[packages]
+motor = "^1.2"
+nflapi = {ref = "v1.0",git = "https://github.com/ca3tech/nflapi.git",editable = true}
+
+[requires]
+python_version = "3.6"
