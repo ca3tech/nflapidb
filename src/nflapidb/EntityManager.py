@@ -1,20 +1,28 @@
 import os
-import json
 from typing import List
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
-from pymongo import ReturnDocument, IndexModel
+from pymongo import ReturnDocument, IndexModel, ASCENDING
 from pymongo.errors import InvalidName
+import importlib
+import nflapidb.Utilities as util
 
 class EntityManager:
 
     def __init__(self, dbHost=os.environ["DB_HOST"], dbPort=int(os.environ["DB_PORT"]),
-                 dbAuthName=os.environ["DB_AUTH_NAME"], dbName=os.environ["DB_NAME"],
+                 dbAuthName=(os.environ["DB_AUTH_NAME"] if "DB_AUTH_NAME" in os.environ else ""),
+                 dbName=os.environ["DB_NAME"],
                  dbUser=os.environ["DB_USER"], dbUserPwd=os.environ["DB_USER_PWD"],
+                 dbSSL=("DB_USE_SSL" in os.environ and util.str2bool(os.environ["DB_USE_SSL"])),
+                 dbReplicaSet=(os.environ["DB_REPL_SET"] if "DB_REPL_SET" in os.environ else ""),
+                 dbAppName=(os.environ["DB_APP_NAME"] if "DB_APP_NAME" in os.environ else ""),
                  entityDirPath: str = None):
         """Create a new EntityManager object"""
         self._db_host = dbHost
         self._db_port = dbPort
-        self._db_auth_name = dbAuthName
+        if not (dbAuthName is None or dbAuthName == ""):
+            self._db_auth_name = dbAuthName
+        else:
+            self._db_auth_name = dbName
         self._db_name = dbName
         self._db_user = dbUser
         self._db_user_pwd = dbUserPwd
@@ -23,6 +31,9 @@ class EntityManager:
         if entityDirPath is None:
             entityDirPath = os.path.join(os.path.dirname(__file__), "entity")
         self._entity_dir_path = entityDirPath
+        self._ssl = dbSSL
+        self._repl_set = dbReplicaSet
+        self._app_name = dbAppName
         self._connect()
 
     def dispose(self):
@@ -50,10 +61,10 @@ class EntityManager:
         self._edpath = path
 
     async def _getCollection(self, entityName: str) -> AsyncIOMotorCollection:
-        try:
-            db = self._database
+        db = self._database
+        if len(await db.list_collection_names(filter={"name": entityName})) > 0:
             col = db[entityName]
-        except InvalidName:
+        else:
             db.create_collection(entityName)
             col = db[entityName]
             await self._createCollectionIndices(col)
@@ -61,19 +72,13 @@ class EntityManager:
 
     def _getCollectionIndices(self, entityName: str) -> List[IndexModel]:
         ixl = None
-        efpath = os.path.join(self._entity_dir_path, entityName)
+        efpath = os.path.join(self._entity_dir_path, f"{entityName}.py")
         if os.path.exists(efpath):
-            with open(efpath, "rt") as fp:
-                entcfg = json.load(fp)
-            if "indices" in entcfg:
-                idxcfg = entcfg["indices"]
-                ixl = []
-                for item in idxcfg:
-                    imargs = {}
-                    imargs["keys"] = [(k, item[k],) for k in item]
-                    for k in [_ for _ in item if _ != "key"]:
-                        imargs[k] = item[k]
-                    ixl.append(IndexModel(**imargs))
+            impath = efpath.replace("/", ".").replace(".py", "")
+            entmod = importlib.import_module(impath)
+            # There has to be a better way of instantiating the object then this
+            ent = eval(f"entmod.{entityName}()")
+            ixl = [IndexModel([(k, ASCENDING) for k in ent.primaryKey], unique=True)]
         return ixl
 
     async def _createCollectionIndices(self, collection : AsyncIOMotorCollection):
@@ -136,5 +141,12 @@ class EntityManager:
         return self._db
 
     def _connect(self):
-        curi = f"mongodb://{self._db_user}:{self._db_user_pwd}@{self._db_host}:{self._db_port}/{self._db_auth_name}"
+        curi = f"mongodb://{self._db_user}:{self._db_user_pwd}@{self._db_host}:{self._db_port}/{self._db_auth_name}?retrywrites=false&maxIdleTimeMS=120000"
+        if self._ssl:
+            curi = f"{curi}&ssl=true"
+        if not (self._repl_set is None or self._repl_set == ""):
+            curi = f"{curi}&replicaSet={self._repl_set}"
+        if not (self._app_name is None or self._app_name == ""):
+            curi = f"{curi}&appName={self._app_name}"
+        print(f"Mongo Connection URI: {curi}")
         self._conn = AsyncIOMotorClient(curi)
