@@ -5,7 +5,6 @@ import os
 import json
 import importlib
 from datetime import datetime
-from dateutil.tz import tz
 import pytz
 from motor.motor_asyncio import AsyncIOMotorCollection
 from nflapidb.EntityManager import EntityManager
@@ -234,8 +233,9 @@ class TestEntityManager(unittest.TestCase):
         ename = "ut_table2"
         entcfgdp = os.path.join(os.path.relpath(os.path.dirname(__file__)), "data", "entities")
         self.entmgr = EntityManager(entityDirPath=entcfgdp)
-        data = [{"column1": "A", "column2": datetime(2019, 11, 20, 13, 00, tzinfo=tz.gettz("America/New_York"))},
-                {"column1": "B", "column2": datetime(2019, 11, 20, 16, 00, tzinfo=tz.gettz("America/New_York"))}]
+        tz = pytz.timezone("US/Eastern")
+        data = [{"column1": "A", "column2": datetime(2019, 11, 20, 13, 00, tzinfo=tz)},
+                {"column1": "B", "column2": datetime(2019, 11, 20, 16, 00, tzinfo=tz)}]
         self._run(self.entmgr.save(ename, data))
         async def verify():
             db = self.entmgr._database
@@ -255,8 +255,9 @@ class TestEntityManager(unittest.TestCase):
         ename = "ut_table2"
         entcfgdp = os.path.join(os.path.relpath(os.path.dirname(__file__)), "data", "entities")
         self.entmgr = EntityManager(entityDirPath=entcfgdp)
-        data = [{"column1": "A", "column2": datetime(2019, 11, 20, 13, 00, tzinfo=tz.gettz("America/New_York"))},
-                {"column1": "B", "column2": datetime(2019, 11, 20, 16, 00, tzinfo=tz.gettz("America/New_York"))}]
+        tz = pytz.timezone("US/Eastern")
+        data = [{"column1": "A", "column2": datetime(2019, 11, 20, 13, 00, tzinfo=tz)},
+                {"column1": "B", "column2": datetime(2019, 11, 20, 16, 00, tzinfo=tz)}]
         idata = data.copy()
         idata[0]["column2"] = idata[0]["column2"].strftime("%Y-%m-%d %H:%M %z")
         idata[1]["column2"] = idata[1]["column2"].strftime("%Y-%m-%d %H:%M %z")
@@ -270,7 +271,7 @@ class TestEntityManager(unittest.TestCase):
                 dbdata = []
                 async for datum in col.find():
                     del datum["_id"]
-                    datum["column2"] = pytz.utc.localize(datum["column2"]).astimezone(pytz.timezone("US/Eastern"))
+                    datum["column2"] = pytz.utc.localize(datum["column2"]).astimezone(tz)
                     dbdata.append(datum)
                 self.assertEqual(dbdata, data, "data not expected")
             except Exception as e:

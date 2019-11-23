@@ -7,7 +7,6 @@ from bson.codec_options import CodecOptions
 import importlib
 from datetime import datetime
 import dateutil.parser
-from dateutil.tz import tz
 import nflapidb.Utilities as util
 from nflapidb.Entity import Entity
 
@@ -69,11 +68,25 @@ class EntityManager:
 
     def _applyAttributeTypes(self, datum : dict, entityName : str) -> dict:
         def dtparse(dt : any) -> datetime:
+            # The US timezone abbreviations from https://www.timetemperature.com/abbreviations/united_states_time_zone_abbreviations.shtml
             tzi = {
+                "AST": -14400,
+                "EDT": -14400,
                 "EST": -18000,
+                "CDT": -18000,
                 "CST": -21600,
-                "WST": -25200,
-                "PST": -28800
+                "MDT": -21600,
+                "MST": -25200,
+                "PDT": -25200,
+                "PST": -28800,
+                "AKDT": -28800,
+                "AKST": -32400,
+                "HADT": -32400,
+                "HAST": -36000,
+                "HST": -36000,
+                "SDT": -36000,
+                "SST": -39600,
+                "CHST": -36000
             }
             if isinstance(dt, str):
                 dt = dateutil.parser.parse(dt, tzinfos=tzi)
