@@ -3,8 +3,13 @@ from typing import List
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 from pymongo import ReturnDocument, IndexModel, ASCENDING
 from pymongo.errors import InvalidName
+from bson.codec_options import CodecOptions
 import importlib
+from datetime import datetime
+import dateutil.parser
+from dateutil.tz import tz
 import nflapidb.Utilities as util
+from nflapidb.Entity import Entity
 
 class EntityManager:
 
@@ -34,6 +39,7 @@ class EntityManager:
         self._ssl = dbSSL
         self._repl_set = dbReplicaSet
         self._app_name = dbAppName
+        self._entityCache = {}
         self._connect()
 
     def dispose(self):
@@ -44,8 +50,9 @@ class EntityManager:
         col = await self._getCollection(entityName)
         pkeys = await self._primaryKey(col)
         for i in range(0, len(data)):
-            q = self._buildQueryItem(data[i], pkeys)
-            data[i] = await col.find_one_and_replace(q, data[i], upsert=True, return_document=ReturnDocument.AFTER)
+            datum = self._applyAttributeTypes(data[i], entityName)
+            q = self._buildQueryItem(datum, pkeys)
+            data[i] = await col.find_one_and_replace(q, datum, upsert=True, return_document=ReturnDocument.AFTER)
 
     async def find(self, entityName: str, query: dict=None, projection: dict=None, collection : AsyncIOMotorCollection=None) -> List[dict]:
         if collection is None:
@@ -60,25 +67,62 @@ class EntityManager:
     def _entity_dir_path(self, path : str):
         self._edpath = path
 
+    def _applyAttributeTypes(self, datum : dict, entityName : str) -> dict:
+        def dtparse(dt : any) -> datetime:
+            tzi = {
+                "EST": -18000,
+                "CST": -21600,
+                "WST": -25200,
+                "PST": -28800
+            }
+            if isinstance(dt, str):
+                dt = dateutil.parser.parse(dt, tzinfos=tzi)
+            return dt
+        switch = {
+            "int": int,
+            "float": float,
+            "datetime": dtparse
+        }
+        ent = self._getEntity(entityName)
+        if ent is not None:
+            for cname in datum:
+                ctype = ent.columnType(cname)
+                if ctype is not None:
+                    if ctype in switch:
+                        datum[cname] = switch[ctype](datum[cname])
+        return datum
+
     async def _getCollection(self, entityName: str) -> AsyncIOMotorCollection:
         db = self._database
         if len(await db.list_collection_names(filter={"name": entityName})) > 0:
-            col = db[entityName]
+            # col = db[entityName]
+            col = db.get_collection(entityName, codec_options=CodecOptions(tz_aware=True))
         else:
-            db.create_collection(entityName)
+            db.create_collection(entityName, codec_options=CodecOptions(tz_aware=True))
             col = db[entityName]
             await self._createCollectionIndices(col)
         return col
 
+    def _getEntity(self, entityName: str) -> Entity:
+        ent = None
+        if entityName in self._entityCache:
+            ent = self._entityCache[entityName]
+        else:
+            efpath = os.path.join(self._entity_dir_path, f"{entityName}.py")
+            if os.path.exists(efpath):
+                impath = efpath.replace("/", ".").replace(".py", "")
+                entmod = importlib.import_module(impath)
+                # There has to be a better way of instantiating the object then this
+                ent = eval(f"entmod.{entityName}()")
+                self._entityCache[entityName] = ent
+        return ent
+
     def _getCollectionIndices(self, entityName: str) -> List[IndexModel]:
         ixl = None
-        efpath = os.path.join(self._entity_dir_path, f"{entityName}.py")
-        if os.path.exists(efpath):
-            impath = efpath.replace("/", ".").replace(".py", "")
-            entmod = importlib.import_module(impath)
-            # There has to be a better way of instantiating the object then this
-            ent = eval(f"entmod.{entityName}()")
-            ixl = [IndexModel([(k, ASCENDING) for k in ent.primaryKey], unique=True)]
+        ent = self._getEntity(entityName)
+        if ent is not None:
+            if len(ent.primaryKey) > 0:
+                ixl = [IndexModel([(k, ASCENDING) for k in ent.primaryKey], unique=True)]
         return ixl
 
     async def _createCollectionIndices(self, collection : AsyncIOMotorCollection):

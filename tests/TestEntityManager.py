@@ -4,6 +4,9 @@ import asyncio
 import os
 import json
 import importlib
+from datetime import datetime
+from dateutil.tz import tz
+import pytz
 from motor.motor_asyncio import AsyncIOMotorCollection
 from nflapidb.EntityManager import EntityManager
 
@@ -196,6 +199,79 @@ class TestEntityManager(unittest.TestCase):
                 col = db[ename]
                 self.assertEqual(await col.count_documents({}), 4, "document count not expected")
                 dbdata = [_ async for _ in col.find()]
+                self.assertEqual(dbdata, data, "data not expected")
+            except Exception as e:
+                self.assertTrue(False, f"Error during verification: {e}")
+            finally:
+                await db.drop_collection(col)
+        self._run(verify())
+
+    def test_save_converts_numeric_types(self):
+        ename = "ut_table1"
+        entcfgdp = os.path.join(os.path.relpath(os.path.dirname(__file__)), "data", "entities")
+        self.entmgr = EntityManager(entityDirPath=entcfgdp)
+        data = [{"column1": "A", "column2": "1", "column3": "1.0"}, {"column1": "A", "column2": "2", "column3": "1.0"},
+                {"column1": "B", "column2": "1", "column3": "1.0"}, {"column1": "B", "column2": "2", "column3": "1.0"}]
+        self._run(self.entmgr.save(ename, data))
+        for i in range(0, len(data)):
+            data[i]["column2"] = int(data[i]["column2"])
+            data[i]["column3"] = float(data[i]["column3"])
+        async def verify():
+            db = self.entmgr._database
+            self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
+            try:
+                col = db[ename]
+                self.assertEqual(await col.count_documents({}), 4, "document count not expected")
+                dbdata = [_ async for _ in col.find()]
+                self.assertEqual(dbdata, data, "data not expected")
+            except Exception as e:
+                self.assertTrue(False, f"Error during verification: {e}")
+            finally:
+                await db.drop_collection(col)
+        self._run(verify())
+
+    def test_db_preserves_timezone(self):
+        ename = "ut_table2"
+        entcfgdp = os.path.join(os.path.relpath(os.path.dirname(__file__)), "data", "entities")
+        self.entmgr = EntityManager(entityDirPath=entcfgdp)
+        data = [{"column1": "A", "column2": datetime(2019, 11, 20, 13, 00, tzinfo=tz.gettz("America/New_York"))},
+                {"column1": "B", "column2": datetime(2019, 11, 20, 16, 00, tzinfo=tz.gettz("America/New_York"))}]
+        self._run(self.entmgr.save(ename, data))
+        async def verify():
+            db = self.entmgr._database
+            self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
+            try:
+                col = db[ename]
+                self.assertEqual(await col.count_documents({}), 2, "document count not expected")
+                dbdata = [_ async for _ in col.find()]
+                self.assertEqual(dbdata, data, "data not expected")
+            except Exception as e:
+                self.assertTrue(False, f"Error during verification: {e}")
+            finally:
+                await db.drop_collection(col)
+        self._run(verify())
+
+    def test_db_preserves_timezone_str(self):
+        ename = "ut_table2"
+        entcfgdp = os.path.join(os.path.relpath(os.path.dirname(__file__)), "data", "entities")
+        self.entmgr = EntityManager(entityDirPath=entcfgdp)
+        data = [{"column1": "A", "column2": datetime(2019, 11, 20, 13, 00, tzinfo=tz.gettz("America/New_York"))},
+                {"column1": "B", "column2": datetime(2019, 11, 20, 16, 00, tzinfo=tz.gettz("America/New_York"))}]
+        idata = data.copy()
+        idata[0]["column2"] = idata[0]["column2"].strftime("%Y-%m-%d %H:%M %z")
+        idata[1]["column2"] = idata[1]["column2"].strftime("%Y-%m-%d %H:%M %z")
+        self._run(self.entmgr.save(ename, idata))
+        async def verify():
+            db = self.entmgr._database
+            self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
+            try:
+                col = db[ename]
+                self.assertEqual(await col.count_documents({}), 2, "document count not expected")
+                dbdata = []
+                async for datum in col.find():
+                    del datum["_id"]
+                    datum["column2"] = pytz.utc.localize(datum["column2"]).astimezone(pytz.timezone("US/Eastern"))
+                    dbdata.append(datum)
                 self.assertEqual(dbdata, data, "data not expected")
             except Exception as e:
                 self.assertTrue(False, f"Error during verification: {e}")

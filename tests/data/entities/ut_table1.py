@@ -1,4 +1,4 @@
-from nflapidb.Entity import Entity, PrimaryKey
+from nflapidb.Entity import Entity, PrimaryKey, Column
 
 class ut_table1(Entity):
     @PrimaryKey
@@ -6,4 +6,7 @@ class ut_table1(Entity):
         return "str"
     @PrimaryKey
     def column2(self):
-        return "str"
+        return "int"
+    @Column
+    def column3(self):
+        return "float"
