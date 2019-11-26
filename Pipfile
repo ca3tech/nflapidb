@@ -5,10 +5,11 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+rope = "*"
 
 [packages]
 motor = "^1.2"
-nflapi = {ref = "v1.0",git = "https://github.com/ca3tech/nflapi.git",editable = true}
+nflapi = {editable = true,git = "https://github.com/ca3tech/nflapi.git",ref = "v1.0"}
 
 [requires]
 python_version = "3.6"

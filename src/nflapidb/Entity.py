@@ -4,11 +4,10 @@ from functools import wraps
 
 class Entity:
     def __init__(self):
-        clazz = self.__class__
-        self._clazz = clazz
-        self._clazz_attrs = getattr(clazz, "__dict__")
+        self._clazz_attrs = getattr(self.__class__, "__dict__")
         self._setPrimaryKey()
         self._setColumns()
+        self._setIndices()
 
     @property
     def primaryKey(self) -> Set[str]:
@@ -17,6 +16,10 @@ class Entity:
     @property
     def columnNames(self) -> Set[str]:
         return set(self._col_map.keys())
+
+    @property
+    def indices(self) -> Set[str]:
+        return set([f.__name__ for f in self._indices])
 
     def columnType(self, cname : str) -> str:
         t = None
@@ -32,6 +35,10 @@ class Entity:
         self._col_map = {}
         for col in self._initDecoratorSet(set(), self._isColumn):
             self._col_map[col.__name__] = col(self)
+    
+    def _setIndices(self):
+        self._indices = set()
+        self._initDecoratorSet(self._indices, self._isIndex)
         
     def _initDecoratorSet(self, s : set, t : callable) -> set:
         for k in self._clazz_attrs:
@@ -44,7 +51,12 @@ class Entity:
         return self._isDecorated(f, "PrimaryKey")
 
     def _isColumn(self, f : callable) -> bool:
-        return self._isDecorated(f, "Column") or self._isDecorated(f, "PrimaryKey")
+        return self._isDecorated(f, "Column") \
+               or self._isDecorated(f, "PrimaryKey") \
+               or self._isDecorated(f, "Index")
+
+    def _isIndex(self, f : callable) -> bool:
+        return self._isDecorated(f, "Index")
 
     def _decorators(self, f : callable) -> Set[str]:
         d = set()
@@ -60,6 +72,9 @@ def PrimaryKey(attr : callable):
 
 def Column(attr : callable):
     return __decorate__(attr, "Column")
+
+def Index(attr : callable):
+    return __decorate__(attr, "Index")
 
 def __addDecorator__(f : callable, dstr : str):
     if hasattr(f, "decorators"):

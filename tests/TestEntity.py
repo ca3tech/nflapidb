@@ -1,6 +1,6 @@
 import unittest
 import inspect
-from nflapidb.Entity import Entity, PrimaryKey, Column
+from nflapidb.Entity import Entity, PrimaryKey, Column, Index
 
 class TestPrimaryKey(unittest.TestCase):
 
@@ -28,6 +28,19 @@ class TestColumn(unittest.TestCase):
         self.assertTrue(hasattr(attr, "decorators"), "has no decorators attribute")
         self.assertEqual(getattr(attr, "decorators"), "Column", "decorators attribute mismatch")
 
+class TestIndex(unittest.TestCase):
+
+    def test_def(self):
+        @Index
+        def attr():
+            return "str"
+        
+        self.assertTrue(inspect.isfunction(attr), "not a function")
+        self.assertEqual(attr.__name__, "attr", "name mismatch")
+        self.assertEqual(attr(), "str", "return value mismatch")
+        self.assertTrue(hasattr(attr, "decorators"), "has no decorators attribute")
+        self.assertEqual(getattr(attr, "decorators"), "Index", "decorators attribute mismatch")
+
 class TestEntity(unittest.TestCase):
 
     def test_primaryKey(self):
@@ -41,6 +54,18 @@ class TestEntity(unittest.TestCase):
 
         o = MyEntity()
         self.assertEqual(o.primaryKey, set(["attr1", "attr2"]))
+
+    def test_indices(self):
+        class MyEntity(Entity):
+            @Index
+            def attr1(self):
+                return "str"
+            @Index
+            def attr2(self):
+                return "str"
+
+        o = MyEntity()
+        self.assertEqual(o.indices, set(["attr1", "attr2"]))
 
     def test_columnNames(self):
         class MyEntity(Entity):
@@ -72,6 +97,37 @@ class TestEntity(unittest.TestCase):
     def test_columnNames_with_pkwcol(self):
         class MyEntity(Entity):
             @PrimaryKey
+            @Column
+            def attr1(self):
+                return "str"
+            @Column
+            def attr2(self):
+                return "str"
+            @Column
+            def attr3(self):
+                return "str"
+
+        o = MyEntity()
+        self.assertEqual(o.columnNames, set(["attr1", "attr2", "attr3"]))
+
+    def test_columnNames_with_index(self):
+        class MyEntity(Entity):
+            @Index
+            def attr1(self):
+                return "str"
+            @Column
+            def attr2(self):
+                return "str"
+            @Column
+            def attr3(self):
+                return "str"
+
+        o = MyEntity()
+        self.assertEqual(o.columnNames, set(["attr1", "attr2", "attr3"]))
+
+    def test_columnNames_with_indexwcol(self):
+        class MyEntity(Entity):
+            @Index
             @Column
             def attr1(self):
                 return "str"

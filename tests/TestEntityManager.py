@@ -61,6 +61,15 @@ class TestEntityManager(unittest.TestCase):
         self.entmgr = MockEntityManager()
         self.assertEqual(self._run(self.entmgr._primaryKey(mc)), ["_id"])
 
+    def test__primaryKey_with_index(self):
+        mc = unittest.mock.create_autospec(AsyncIOMotorCollection)
+        async def ii():
+            return [{"_id_": {"key": [("_id", 1)]}},
+                    {"x_1": {"key": [("x", 1)]}}]
+        mc.index_information = ii
+        self.entmgr = MockEntityManager()
+        self.assertEqual(self._run(self.entmgr._primaryKey(mc)), ["_id"])
+
     def test__primaryKey__id_single_unique(self):
         mc = unittest.mock.create_autospec(AsyncIOMotorCollection)
         async def ii():

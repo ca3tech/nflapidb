@@ -45,18 +45,36 @@ class EntityManager:
         """Call this when you are done using the object"""
         self._conn.close()
 
-    async def save(self, entityName: str, data: List[dict]):
+    def getEntity(self, entityName: str) -> Entity:
+        ent = None
+        if entityName in self._entityCache:
+            ent = self._entityCache[entityName]
+        else:
+            efpath = os.path.join(os.path.relpath(self._entity_dir_path), f"{entityName}.py")
+            if os.path.exists(efpath):
+                impath = efpath.replace("/", ".").replace(".py", "")
+                entmod = importlib.import_module(impath)
+                # There has to be a better way of instantiating the object then this
+                ent = eval(f"entmod.{entityName}()")
+                self._entityCache[entityName] = ent
+        return ent
+
+    async def save(self, entityName: str, data: List[dict]) -> List[dict]:
         col = await self._getCollection(entityName)
         pkeys = await self._primaryKey(col)
         for i in range(0, len(data)):
             datum = self._applyAttributeTypes(data[i], entityName)
             q = self._buildQueryItem(datum, pkeys)
             data[i] = await col.find_one_and_replace(q, datum, upsert=True, return_document=ReturnDocument.AFTER)
+        return data
 
     async def find(self, entityName: str, query: dict=None, projection: dict=None, collection : AsyncIOMotorCollection=None) -> List[dict]:
         if collection is None:
             collection = await self._getCollection(entityName)
         return [d async for d in collection.find(query, projection=projection)]
+
+    async def drop(self, entityName: str):
+        await self._database.drop_collection(entityName)
 
     @property
     def _entity_dir_path(self) -> str:
@@ -96,7 +114,7 @@ class EntityManager:
             "float": float,
             "datetime": dtparse
         }
-        ent = self._getEntity(entityName)
+        ent = self.getEntity(entityName)
         if ent is not None:
             for cname in datum:
                 ctype = ent.columnType(cname)
@@ -108,34 +126,23 @@ class EntityManager:
     async def _getCollection(self, entityName: str) -> AsyncIOMotorCollection:
         db = self._database
         if len(await db.list_collection_names(filter={"name": entityName})) > 0:
-            # col = db[entityName]
-            col = db.get_collection(entityName, codec_options=CodecOptions(tz_aware=True))
+            col = db[entityName]
         else:
             db.create_collection(entityName, codec_options=CodecOptions(tz_aware=True))
             col = db[entityName]
             await self._createCollectionIndices(col)
         return col
 
-    def _getEntity(self, entityName: str) -> Entity:
-        ent = None
-        if entityName in self._entityCache:
-            ent = self._entityCache[entityName]
-        else:
-            efpath = os.path.join(self._entity_dir_path, f"{entityName}.py")
-            if os.path.exists(efpath):
-                impath = efpath.replace("/", ".").replace(".py", "")
-                entmod = importlib.import_module(impath)
-                # There has to be a better way of instantiating the object then this
-                ent = eval(f"entmod.{entityName}()")
-                self._entityCache[entityName] = ent
-        return ent
-
     def _getCollectionIndices(self, entityName: str) -> List[IndexModel]:
         ixl = None
-        ent = self._getEntity(entityName)
+        ent = self.getEntity(entityName)
         if ent is not None:
             if len(ent.primaryKey) > 0:
                 ixl = [IndexModel([(k, ASCENDING) for k in ent.primaryKey], unique=True)]
+            if len(ent.indices) > 0:
+                if ixl is None:
+                    ixl = []
+                ixl.extend([IndexModel([(k, ASCENDING) for k in ent.indices])])
         return ixl
 
     async def _createCollectionIndices(self, collection : AsyncIOMotorCollection):

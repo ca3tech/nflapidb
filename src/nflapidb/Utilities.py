@@ -1,5 +1,6 @@
-from typing import List, Tuple
+from typing import List, Tuple, Coroutine
 import re
+import asyncio
 
 def ddquery(q : List[dict], data : List[dict]) -> Tuple[List[dict]]:
     """Find items in data matching items in q
@@ -41,4 +42,7 @@ def ddquery(q : List[dict], data : List[dict]) -> Tuple[List[dict]]:
 
 def str2bool(v : str) -> bool:
     return not (v is None or v == "" or re.search(r"^(f(alse)*|no*)$", v, flags=re.IGNORECASE) is not None)
+
+def runCoroutine(coro : Coroutine) -> any:
+    return asyncio.get_event_loop().run_until_complete(coro)
     
