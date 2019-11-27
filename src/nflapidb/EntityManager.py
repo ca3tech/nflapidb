@@ -73,6 +73,12 @@ class EntityManager:
             collection = await self._getCollection(entityName)
         return [d async for d in collection.find(query, projection=projection)]
 
+    async def delete(self, entityName: str, query: dict={}, collection : AsyncIOMotorCollection=None) -> int:
+        if collection is None:
+            collection = await self._getCollection(entityName)
+        rslt = await collection.delete_many(query)
+        return rslt.deleted_count
+
     async def drop(self, entityName: str):
         await self._database.drop_collection(entityName)
 

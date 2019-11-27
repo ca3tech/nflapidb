@@ -289,6 +289,26 @@ class TestEntityManager(unittest.TestCase):
                 await db.drop_collection(col)
         self._run(verify())
 
+    def test_delete(self):
+        self.entmgr = EntityManager()
+        ename = "ut_table1"
+        data = [{"column1": "A", "column2": 1}, {"column1": "B", "column2": 2}]
+        db = self.entmgr._database
+        col = db[ename]
+        self._run(col.insert_many(data))
+        self._run(self.entmgr.delete(ename, {"column1": "B"}))
+        async def verify():
+            self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
+            try:
+                self.assertEqual(await col.count_documents({}), 1, "document count not expected")
+                dbdata = [_ async for _ in col.find()]
+                self.assertEqual(dbdata, [data[0]], "data not expected")
+            except Exception as e:
+                self.assertTrue(False, f"Error during verification: {e}")
+            finally:
+                await db.drop_collection(col)
+        self._run(verify())
+
 class MockEntityManager(EntityManager):
     @property
     def connectCalled(self):
