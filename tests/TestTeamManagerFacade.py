@@ -1,5 +1,4 @@
 import unittest
-import asyncio
 from nflapidb.TeamManagerFacade import TeamManagerFacade
 from nflapidb.EntityManager import EntityManager
 import nflapidb.Utilities as util
@@ -18,6 +17,14 @@ class TestTeamManagerFacade(unittest.TestCase):
     def test_sync_initializes_collection(self):
         recs = util.runCoroutine(self.datamgr.sync())
         self.assertGreater(len(recs), 0, "sync returned 0 records")
+        dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
+        self.assertEqual(dbrecs, recs, "db records differ")
+
+    def test_sync_only_inserts_new(self):
+        recs = util.runCoroutine(self.datamgr.sync())
+        self.assertGreater(len(recs), 0, "sync returned 0 records")
+        recs2 = util.runCoroutine(self.datamgr.sync())
+        self.assertEqual(len(recs2), 0, "sync returned 0 records")
         dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
         self.assertEqual(dbrecs, recs, "db records differ")
 

@@ -113,7 +113,11 @@ class EntityManager:
                 "CHST": -36000
             }
             if isinstance(dt, str):
-                dt = dateutil.parser.parse(dt, tzinfos=tzi)
+                if dt is not None:
+                    if dt == "":
+                        dt = None
+                    else:
+                        dt = dateutil.parser.parse(dt, tzinfos=tzi)
             return dt
         switch = {
             "int": int,
@@ -123,10 +127,11 @@ class EntityManager:
         ent = self.getEntity(entityName)
         if ent is not None:
             for cname in datum:
-                ctype = ent.columnType(cname)
-                if ctype is not None:
-                    if ctype in switch:
-                        datum[cname] = switch[ctype](datum[cname])
+                if datum[cname] is not None:
+                    ctype = ent.columnType(cname)
+                    if ctype is not None:
+                        if ctype in switch:
+                            datum[cname] = switch[ctype](datum[cname])
         return datum
 
     async def _getCollection(self, entityName: str) -> AsyncIOMotorCollection:
