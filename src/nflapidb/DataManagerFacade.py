@@ -17,20 +17,22 @@ class DataManagerFacade(abc.ABC):
         return self._entity_name
 
     @abstractmethod
-    async def sync(self) -> List[dict]:
+    async def sync(self, **kwargs) -> List[dict]:
         pass
 
     async def save(self, data : List[dict]) -> List[dict]:
         return await self._entity_manager.save(self._entity_name, data)
 
-    async def find(self, **kwargs) -> List[dict]:
-        qm = self._getQueryModel(**kwargs)
+    async def find(self, qm : QueryModel = None, **kwargs) -> List[dict]:
+        if qm is None:
+            qm = self._getQueryModel(**kwargs)
         return await self._entity_manager.find(self._entity_name,
                                                query=qm.constraint,
                                                projection=qm.select())
 
-    async def delete(self, **kwargs) -> int:
-        qm = self._getQueryModel(**kwargs)
+    async def delete(self, qm : QueryModel = None, **kwargs) -> int:
+        if qm is None:
+            qm = self._getQueryModel(**kwargs)
         return await self._entity_manager.delete(self._entity_name,
                                                  query=qm.constraint)
 

@@ -15,9 +15,29 @@ class TestQueryModel(unittest.TestCase):
         qmodel = QueryModel()
         self.assertEqual(qmodel.select(column1=True), {"_id": False, "column1": True})
 
+    def test_select_one_include_from_sinclude(self):
+        qmodel = QueryModel()
+        qmodel.sinclude(["column1"])
+        self.assertEqual(qmodel.select(), {"_id": False, "column1": True})
+
+    def test_select_two_include_from_sinclude(self):
+        qmodel = QueryModel()
+        qmodel.sinclude(["column1", "column2"])
+        self.assertEqual(qmodel.select(), {"_id": False, "column1": True, "column2": True})
+
     def test_select_one_exclude(self):
         qmodel = QueryModel()
         self.assertEqual(qmodel.select(column1=False), {"_id": False, "column1": False})
+
+    def test_select_one_exclude_from_sexclude(self):
+        qmodel = QueryModel()
+        qmodel.sexclude(["column1"])
+        self.assertEqual(qmodel.select(), {"_id": False, "column1": False})
+
+    def test_select_two_exclude_from_sexclude(self):
+        qmodel = QueryModel()
+        qmodel.sexclude(["column1", "column2"])
+        self.assertEqual(qmodel.select(), {"_id": False, "column1": False, "column2": False})
 
     def test_constraint_one_constraint_eq(self):
         qmodel = QueryModel()

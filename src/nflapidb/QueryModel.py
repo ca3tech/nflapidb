@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 from nflapidb.Entity import Entity
 from nflapidb.EntityManager import EntityManager
 
@@ -50,15 +50,28 @@ class Operator:
 class QueryModel:
 
     def __init__(self):
-        self._constraint = None
+        self._select : dict = {"_id": False}
+        self._constraint : dict = None
 
     def select(self, withId : bool = False, **kwargs) -> dict:
-        sd = {}
+        sd = self._select.copy()
         if not withId:
             sd["_id"] = False
+        elif "_id" in sd:
+            del sd["_id"]
         if len(kwargs):
             sd.update(kwargs)
         return sd
+
+    def sincludeID(self):
+        if "_id" in self._select and not self._select["_id"]:
+            del self._select["_id"]
+
+    def sinclude(self, columnNames : List[str]):
+        self._select.update(dict(zip(columnNames, [True for _ in columnNames])))
+
+    def sexclude(self, columnNames : List[str]):
+        self._select.update(dict(zip(columnNames, [False for _ in columnNames])))
 
     @property
     def constraint(self) -> dict:
