@@ -1,11 +1,12 @@
 import os
-from typing import List
+from typing import List, Any
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 from pymongo import ReturnDocument, IndexModel, ASCENDING
 from pymongo.errors import InvalidName
 from bson.codec_options import CodecOptions
 import importlib
 from datetime import datetime
+from time import struct_time
 import dateutil.parser
 import nflapidb.Utilities as util
 from nflapidb.Entity import Entity
@@ -91,7 +92,7 @@ class EntityManager:
         self._edpath = path
 
     def _applyAttributeTypes(self, datum : dict, entityName : str) -> dict:
-        def dtparse(dt : any) -> datetime:
+        def dtparse(dt : Any) -> datetime:
             # The US timezone abbreviations from https://www.timetemperature.com/abbreviations/united_states_time_zone_abbreviations.shtml
             tzi = {
                 "AST": -14400,
@@ -118,6 +119,11 @@ class EntityManager:
                         dt = None
                     else:
                         dt = dateutil.parser.parse(dt, tzinfos=tzi)
+            elif isinstance(dt, struct_time):
+                tzkey = dt.tm_zone
+                dt = datetime.datetime(dt.tm_year, dt.tm_mon, dt.tm_mday,
+                                       dt.tm_hour, dt.tm_min, dt.tm_sec,
+                                       tzinfo=datetime.timezone(datetime.timedelta(seconds=tzi[tzkey]), tzkey))
             return dt
         switch = {
             "int": int,

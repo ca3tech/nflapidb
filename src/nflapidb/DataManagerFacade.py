@@ -44,7 +44,7 @@ class DataManagerFacade(abc.ABC):
         return self._entity_manager
 
     @property
-    def _apiClient(self) -> EntityManager:
+    def _apiClient(self) -> nflapi.Client.Client:
         return self._nflapi_client
     
     @abstractmethod
