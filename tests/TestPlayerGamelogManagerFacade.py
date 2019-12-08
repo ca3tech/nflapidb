@@ -2,7 +2,7 @@ import unittest
 import unittest.mock
 import os
 import json
-from typing import List
+from typing import List, Set
 import random
 import datetime
 import nflapi.Client
@@ -146,7 +146,7 @@ class TestPlayerGamelogManagerFacade(unittest.TestCase):
         dbrecs = util.runCoroutine(self.entmgr.find(self.entityName, projection={"_id": False}))
         self._compareGL(dbrecs, usrcdata)
 
-    def test_sync_updates_all_with_week_diff(self):
+    def test_sync_updates_current_season_only_with_week_diff(self):
         with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
             rstdata = json.load(fp)
         with open(os.path.join(os.path.dirname(__file__), "data", "roster_pit.json"), "rt") as fp:
@@ -214,81 +214,81 @@ class TestPlayerGamelogManagerFacade(unittest.TestCase):
         util.runCoroutine(rmgr.sync())
         dbrecs = util.runCoroutine(self.entmgr.find(self.entityName, projection={"_id": False}))
         self._compareGL(dbrecs, srcdata2)
+        self.assertEqual(rmgr._apiClient.getRequestedSeasons(), set([rmgr._currentSeason]), "requested seasons differs")
 
-    # def test_save_appends(self):
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
-    #         kcrdata = json.load(fp)
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
-    #         kcdata = json.load(fp)
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_pit.json"), "rt") as fp:
-    #         pitdata = json.load(fp)
-    #     rmgr = self._getMockPlayerGamelogManager(rosterData=kcrdata, gamelogData=kcdata.copy())
-    #     recs = util.runCoroutine(rmgr.sync())
-    #     self.assertEqual(len(recs), len(kcdata), "sync record count differs")
-    #     recs.extend(util.runCoroutine(rmgr.save(pitdata.copy())))
-    #     self.assertEqual(len(recs), len(kcdata) + len(pitdata), "save record count differs")
-    #     dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
-    #     self.assertEqual(len(dbrecs), len(recs), "db record count differs")
-    #     self.assertEqual(dbrecs, recs, "db records differ")
+    def test_save_appends(self):
+        with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
+            kcrdata = json.load(fp)
+        with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
+            kcdata = json.load(fp)
+        with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_pit.json"), "rt") as fp:
+            pitdata = json.load(fp)
+        rmgr = self._getMockPlayerGamelogManager(rosterData=kcrdata, gamelogData=kcdata.copy())
+        recs = util.runCoroutine(rmgr.sync())
+        self.assertEqual(len(recs), len(kcdata), "sync record count differs")
+        recs.extend(util.runCoroutine(rmgr.save(pitdata.copy())))
+        self.assertEqual(len(recs), len(kcdata) + len(pitdata), "save record count differs")
+        dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
+        self._compareGL(dbrecs, recs)
 
-    # def test_save_updates_previous_team(self):
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
-    #         srcrdata = json.load(fp)
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "roster_pit.json"), "rt") as fp:
-    #         srcrdata.extend(json.load(fp))
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
-    #         kcdata = json.load(fp)
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_pit.json"), "rt") as fp:
-    #         pitdata = json.load(fp)
-    #     srcdata = kcdata.copy()
-    #     srcdata.extend(pitdata.copy())
-    #     rmgr = self._getMockPlayerGamelogManager(rosterData=srcrdata, gamelogData=srcdata)
-    #     recs = util.runCoroutine(rmgr.sync())
-    #     self.assertEqual(len(recs), len(srcdata), "sync record count differs")
-    #     for rec in pitdata:
-    #         if rec["profile_id"] == 2560950:
-    #             rec["team"] = "KC"
-    #             kcdata.append(rec)
-    #     recs2 = util.runCoroutine(rmgr.save(kcdata.copy()))
-    #     self.assertEqual(len(recs2), len(kcdata), "save record count differs")
-    #     dbrecs = util.runCoroutine(self.entmgr.find(self.entityName, projection={"_id": False}))
-    #     self.assertEqual(len(dbrecs), len(srcdata), "db record count differs")
-    #     for rec in srcdata:
-    #         if rec["profile_id"] == 2560950:
-    #             rec["team"] = "KC"
-    #             rec["previous_teams"] = ["PIT"]
-    #     self.assertEqual(dbrecs, srcdata, "db records differ")
+    def test_save_updates_previous_team(self):
+        with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
+            srcrdata = json.load(fp)
+        with open(os.path.join(os.path.dirname(__file__), "data", "roster_pit.json"), "rt") as fp:
+            srcrdata.extend(json.load(fp))
+        with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
+            kcdata = json.load(fp)
+        with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_pit.json"), "rt") as fp:
+            pitdata = json.load(fp)
+        srcdata = kcdata.copy()
+        srcdata.extend(pitdata.copy())
+        rmgr = self._getMockPlayerGamelogManager(rosterData=srcrdata, gamelogData=srcdata)
+        recs = util.runCoroutine(rmgr.sync())
+        self.assertEqual(len(recs), len(srcdata), "sync record count differs")
+        for rec in pitdata:
+            if rec["profile_id"] == 2560950:
+                rec["team"] = "KC"
+                kcdata.append(rec)
+        recs2 = util.runCoroutine(rmgr.save(kcdata.copy()))
+        self.assertEqual(len(recs2), len(kcdata), "save record count differs")
+        dbrecs = util.runCoroutine(self.entmgr.find(self.entityName, projection={"_id": False}))
+        for rec in srcdata:
+            if rec["profile_id"] == 2560950:
+                rec["team"] = "KC"
+                rec["previous_teams"] = ["PIT"]
+        self._compareGL(dbrecs, srcdata)
 
-    # def test_delete_team(self):
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
-    #         kcdata = json.load(fp)
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_pit.json"), "rt") as fp:
-    #         pitdata = json.load(fp)
-    #     srcdata = kcdata.copy()
-    #     srcdata.extend(pitdata.copy())
-    #     rmgr = self._getPlayerGamelogManager()
-    #     recs = util.runCoroutine(rmgr.save(srcdata))
-    #     self.assertEqual(len(recs), len(srcdata), "save returned record count differs")
-    #     dcount = util.runCoroutine(rmgr.delete(teams=["PIT"]))
-    #     self.assertEqual(dcount, len(pitdata), "delete returned record count differs")
-    #     dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
-    #     self.assertEqual(len(dbrecs), len(kcdata), "db record count differs")
-    #     for rec in dbrecs:
-    #         del rec["_id"]
-    #     self.assertEqual(dbrecs, kcdata, "db records differ")
+    def test_delete_team(self):
+        with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
+            kcdata = json.load(fp)
+        with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_pit.json"), "rt") as fp:
+            pitdata = json.load(fp)
+        srcdata = kcdata.copy()
+        srcdata.extend(pitdata.copy())
+        rmgr = self._getPlayerGamelogManager()
+        recs = util.runCoroutine(rmgr.save(srcdata))
+        self.assertEqual(len(recs), len(srcdata), "save returned record count differs")
+        dcount = util.runCoroutine(rmgr.delete(teams=["PIT"]))
+        self.assertEqual(dcount, len(pitdata), "delete returned record count differs")
+        dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
+        for rec in dbrecs:
+            del rec["_id"]
+        self._compareGL(dbrecs, kcdata)
 
-    # def test_delete_profile_id(self):
-    #     with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
-    #         srcdata = json.load(fp)
-    #     rmgr = self._getPlayerGamelogManager()
-    #     recs = util.runCoroutine(rmgr.save(srcdata))
-    #     self.assertEqual(len(recs), len(srcdata), "save returned record count differs")
-    #     dcount = util.runCoroutine(rmgr.delete(profile_ids=[2562399]))
-    #     self.assertEqual(dcount, 1, "delete returned record count differs")
-    #     dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
-    #     self.assertEqual(len(dbrecs), len(srcdata) - 1, "db record count differs")
-    #     xdata = [_ for _ in srcdata if _["profile_id"] != 2562399]
-    #     self.assertEqual(dbrecs, xdata, "db records differ")
+    def test_delete_profile_id(self):
+        with open(os.path.join(os.path.dirname(__file__), "data", "player_gamelog_kc.json"), "rt") as fp:
+            srcdata = json.load(fp)
+        xdelrecs = [_ for _ in srcdata if _["profile_id"] == 2562399]
+        xdata = [_ for _ in srcdata if _["profile_id"] != 2562399]
+        rmgr = self._getPlayerGamelogManager()
+        recs = util.runCoroutine(rmgr.save(srcdata))
+        self.assertEqual(len(recs), len(srcdata), "save returned record count differs")
+        dcount = util.runCoroutine(rmgr.delete(profile_ids=[2562399]))
+        self.assertEqual(dcount, len(xdelrecs), "delete returned record count differs")
+        dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
+        for rec in dbrecs:
+            del rec["_id"]
+        self._compareGL(dbrecs, xdata)
 
 class MockRosterManagerFacade(RosterManagerFacade):
     def __init__(self, entityManager : EntityManager, apiClient : nflapi.Client.Client, findData : List[dict]):
@@ -313,9 +313,11 @@ class MockApiClient(nflapi.Client.Client):
             else:
                 self._gamelog_data[pid] = dict([(ssn, [datum])])
         self._req_rosters = []
+        self._req_seasons = set()
 
     def getPlayerGameLog(self, rosters : List[str], season : int) -> List[dict]:
         self._req_rosters = rosters
+        self._req_seasons.add(season)
         data = []
         for rec in rosters:
             pid = rec["profile_id"]
@@ -325,6 +327,9 @@ class MockApiClient(nflapi.Client.Client):
 
     def getRequestedRosters(self) -> List[dict]:
         return self._req_rosters
+
+    def getRequestedSeasons(self) -> Set[dict]:
+        return self._req_seasons
 
 def __getUniqueGL__(data : List[dict]) -> List[dict]:
     udata = []
