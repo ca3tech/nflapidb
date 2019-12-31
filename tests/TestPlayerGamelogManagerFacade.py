@@ -22,10 +22,10 @@ class TestPlayerGamelogManagerFacade(unittest.TestCase):
         util.runCoroutine(self.entmgr.drop(f"{self.entityName}_process"))
         self.entmgr.dispose()
 
-    def _getMockPlayerGamelogManager(self, rosterData : List[dict], gamelogData : List[dict]):
+    def _getMockPlayerGamelogManager(self, rosterData : List[dict], gamelogData : List[dict], dataExpired : bool = None):
         apiClient = MockApiClient(gamelogData)
         rmgr = MockRosterManagerFacade(self.entmgr, apiClient, rosterData)
-        self.datamgr = PlayerGamelogManagerFacade(self.entmgr, apiClient, rmgr)
+        self.datamgr = MockPlayerGamelogManagerFacade(self.entmgr, apiClient, rmgr, dataExpired)
         return self.datamgr
 
     def _getPlayerGamelogManager(self):
@@ -94,9 +94,11 @@ class TestPlayerGamelogManagerFacade(unittest.TestCase):
                 # Since the team is changing the previous_teams attribute should be set
                 crec["previous_teams"] = ["PIT"]
                 xrec.append(crec)
-        rmgr = self._getMockPlayerGamelogManager(rosterData=rstdata, gamelogData=srcdata)
+        rmgr = self._getMockPlayerGamelogManager(rosterData=rstdata, gamelogData=srcdata, dataExpired=False)
         recs = util.runCoroutine(rmgr.sync())
-        self.assertEqual(rmgr._apiClient.getRequestedRosters(), xreqrec, "requested rosters differs")
+        reqrec = rmgr._apiClient.getRequestedRosters()
+        self.assertEqual(len(reqrec), len(xreqrec), "requested roster lengths differs")
+        self.assertEqual(reqrec, xreqrec, "requested rosters differs")
         self.assertEqual(len(recs), 24, "sync returned record count differs")
         dbrecs = util.runCoroutine(self.entmgr.find(self.entityName,
                                                     query={"profile_id": 2560950},
@@ -115,7 +117,7 @@ class TestPlayerGamelogManagerFacade(unittest.TestCase):
             srcdata.extend(json.load(fp))
         rmgr = self._getMockPlayerGamelogManager(rosterData=rstdata, gamelogData=srcdata)
         recs = util.runCoroutine(rmgr.sync())
-        rmgr = self._getMockPlayerGamelogManager(rosterData=rstdata, gamelogData=srcdata)
+        rmgr = self._getMockPlayerGamelogManager(rosterData=rstdata, gamelogData=srcdata, dataExpired=False)
         recs = util.runCoroutine(rmgr.sync())
         self.assertEqual(len(recs), 0, "sync returned record count differs")
         self.assertEqual(rmgr._apiClient.getRequestedRosters(), [], "requested rosters differs")
@@ -289,6 +291,20 @@ class TestPlayerGamelogManagerFacade(unittest.TestCase):
         for rec in dbrecs:
             del rec["_id"]
         self._compareGL(dbrecs, xdata)
+
+class MockPlayerGamelogManagerFacade(PlayerGamelogManagerFacade):
+    def __init__(self, entityManager : EntityManager,
+                 apiClient : nflapi.Client.Client = None,
+                 rosterManager : RosterManagerFacade = None,
+                 dataExpired : bool = None):
+        super(MockPlayerGamelogManagerFacade, self).__init__(entityManager, apiClient, rosterManager)
+        self._data_expired = dataExpired
+
+    async def _isDataExpired(self) -> bool:
+        if self._data_expired is not None:
+            return self._data_expired
+        else:
+            return await super(MockPlayerGamelogManagerFacade, self)._isDataExpired()
 
 class MockRosterManagerFacade(RosterManagerFacade):
     def __init__(self, entityManager : EntityManager, apiClient : nflapi.Client.Client, findData : List[dict]):

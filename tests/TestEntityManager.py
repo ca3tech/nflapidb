@@ -130,7 +130,7 @@ class TestEntityManager(unittest.TestCase):
             self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
             try:
                 col = db[ename]
-                self.assertEqual(await col.count_documents({}), 2, "document count not expected")
+                self.assertEqual(await col.count({}), 2, "document count not expected")
                 dbdata = [_ async for _ in col.find()]
                 self.assertEqual(dbdata, data, "data not expected")
             except Exception as e:
@@ -161,7 +161,7 @@ class TestEntityManager(unittest.TestCase):
             self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
             try:
                 col = db[ename]
-                self.assertEqual(await col.count_documents({}), 2, "document count not expected")
+                self.assertEqual(await col.count({}), 2, "document count not expected")
                 dbdata = [_ async for _ in col.find()]
                 self.assertEqual(dbdata, data, "data not expected")
             except Exception as e:
@@ -205,7 +205,7 @@ class TestEntityManager(unittest.TestCase):
             self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
             try:
                 col = db[ename]
-                self.assertEqual(await col.count_documents({}), 4, "document count not expected")
+                self.assertEqual(await col.count({}), 4, "document count not expected")
                 dbdata = [_ async for _ in col.find()]
                 self.assertEqual(dbdata, data, "data not expected")
             except Exception as e:
@@ -229,7 +229,7 @@ class TestEntityManager(unittest.TestCase):
             self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
             try:
                 col = db[ename]
-                self.assertEqual(await col.count_documents({}), 4, "document count not expected")
+                self.assertEqual(await col.count({}), 4, "document count not expected")
                 dbdata = [_ async for _ in col.find()]
                 self.assertEqual(dbdata, data, "data not expected")
             except Exception as e:
@@ -251,7 +251,7 @@ class TestEntityManager(unittest.TestCase):
             self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
             try:
                 col = db[ename]
-                self.assertEqual(await col.count_documents({}), 2, "document count not expected")
+                self.assertEqual(await col.count({}), 2, "document count not expected")
                 dbdata = [_ async for _ in col.find()]
                 self.assertEqual(dbdata, data, "data not expected")
             except Exception as e:
@@ -276,7 +276,7 @@ class TestEntityManager(unittest.TestCase):
             self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
             try:
                 col = db[ename]
-                self.assertEqual(await col.count_documents({}), 2, "document count not expected")
+                self.assertEqual(await col.count({}), 2, "document count not expected")
                 dbdata = []
                 async for datum in col.find():
                     del datum["_id"]
@@ -300,7 +300,7 @@ class TestEntityManager(unittest.TestCase):
         async def verify():
             self.assertTrue(ename in await db.list_collection_names(), f"collection {ename} not created")
             try:
-                self.assertEqual(await col.count_documents({}), 1, "document count not expected")
+                self.assertEqual(await col.count({}), 1, "document count not expected")
                 dbdata = [_ async for _ in col.find()]
                 self.assertEqual(dbdata, [data[0]], "data not expected")
             except Exception as e:

@@ -8,8 +8,9 @@ pylint = "*"
 rope = "*"
 
 [packages]
-motor = "^1.2"
-nflapi = {editable = true,git = "https://github.com/ca3tech/nflapi.git",ref = "v1.0"}
+motor = "<2"
+pytz = "*"
+nflapi = {editable = true,git = "https://github.com/ca3tech/nflapi.git"}
 
 [requires]
 python_version = "3.6"
