@@ -131,10 +131,7 @@ class PlayerGamelogManagerFacade(DataManagerFacade):
         return frecs
 
     def _getSeason(self, dt : datetime.datetime) -> int:
-        season = dt.year
-        if dt.month < 8:
-            season -= 1
-        return season
+        return util.getSeason(dt)
 
     async def _minSyncSeason(self) -> int:
         if self._min_sync_season is None:

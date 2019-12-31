@@ -1,6 +1,7 @@
 from typing import List, Tuple, Coroutine
 import re
 import asyncio
+import datetime
 
 def ddquery(q : List[dict], data : List[dict]) -> Tuple[List[dict]]:
     """Find items in data matching items in q
@@ -45,4 +46,10 @@ def str2bool(v : str) -> bool:
 
 def runCoroutine(coro : Coroutine) -> any:
     return asyncio.get_event_loop().run_until_complete(coro)
+
+def getSeason(dt : datetime.datetime = datetime.datetime.today()) -> int:
+    season = dt.year
+    if dt.month < 8:
+        season -= 1
+    return season
     
