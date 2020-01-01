@@ -41,11 +41,11 @@ class ScheduleManagerFacade(DataManagerFacade):
         if last:
             recs = await self.find(finished=True)
             if len(recs) > 0:
-                recs = [self._filterLastWeek(recs)]
+                recs = self._filterLastWeek(recs)
         elif next:
             recs = await self.find(finished=False)
             if len(recs) > 0:
-                recs = [self._filterFirstWeek(recs)]
+                recs = self._filterFirstWeek(recs)
         else:
             if finished is not None:
                 finished = [finished]
@@ -127,11 +127,13 @@ class ScheduleManagerFacade(DataManagerFacade):
 
     def _filterLastWeek(self, recs : List[dict]) -> dict:
         recs = self._sortSchedules(recs)
-        return recs[len(recs)-1]
+        mrec = recs[len(recs)-1]
+        return [r for r in recs if r["season"]==mrec["season"] and r["season_type"]==mrec["season_type"] and r["week"]==mrec["week"]]
 
     def _filterFirstWeek(self, recs : List[dict]) -> dict:
         recs = self._sortSchedules(recs)
-        return recs[0]
+        mrec = recs[0]
+        return [r for r in recs if r["season"]==mrec["season"] and r["season_type"]==mrec["season_type"] and r["week"]==mrec["week"]]
 
     def _sortSchedules(self, recs : List[dict]) -> List[dict]:
         def skey(rec) -> float:

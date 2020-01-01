@@ -173,10 +173,11 @@ class TestScheduleManagerFacade(unittest.TestCase):
         smgr = self._getMockScheduleManager(scheduleData=srcdata)
         util.runCoroutine(smgr.sync())
         recs = util.runCoroutine(smgr.find(last=True))
-        self.assertEqual(len(recs), 1, "record count differs")
-        self.assertEqual(recs[0]["season"], 2019, "season differs")
-        self.assertEqual(recs[0]["season_type"], "regular_season", "season_type differs")
-        self.assertEqual(recs[0]["week"], 13, "week differs")
+        self.assertEqual(len(recs), 2, "record count differs")
+        for rec in recs:
+            self.assertEqual(rec["season"], 2019, "{} season differs".format(rec["gsis_id"]))
+            self.assertEqual(rec["season_type"], "regular_season", "{} season_type differs".format(rec["gsis_id"]))
+            self.assertEqual(rec["week"], 13, "{} week differs".format(rec["gsis_id"]))
 
     def test_find_by_next(self):
         srcdata = []
@@ -187,10 +188,11 @@ class TestScheduleManagerFacade(unittest.TestCase):
         smgr = self._getMockScheduleManager(scheduleData=srcdata)
         util.runCoroutine(smgr.sync())
         recs = util.runCoroutine(smgr.find(next=True))
-        self.assertEqual(len(recs), 1, "record count differs")
-        self.assertEqual(recs[0]["season"], 2019, "season differs")
-        self.assertEqual(recs[0]["season_type"], "regular_season", "season_type differs")
-        self.assertEqual(recs[0]["week"], 14, "week differs")
+        self.assertEqual(len(recs), 2, "record count differs")
+        for rec in recs:
+            self.assertEqual(rec["season"], 2019, "{} season differs".format(rec["gsis_id"]))
+            self.assertEqual(rec["season_type"], "regular_season", "{} season_type differs".format(rec["gsis_id"]))
+            self.assertEqual(rec["week"], 14, "{} week differs".format(rec["gsis_id"]))
 
 class MockApiClient(nflapi.Client.Client):
     def __init__(self, scheduleData : List[dict]):
