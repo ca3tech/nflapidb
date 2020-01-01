@@ -4,7 +4,6 @@ import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
 from nflapidb.QueryModel import QueryModel, Operator
-from nflapidb.SeasonTypeSequence import SeasonTypeSequence
 import nflapidb.Utilities as util
 
 class ScheduleManagerFacade(DataManagerFacade):
@@ -12,24 +11,23 @@ class ScheduleManagerFacade(DataManagerFacade):
     def __init__(self, entityManager : EntityManager,
                  apiClient : nflapi.Client.Client = None):
         super(ScheduleManagerFacade, self).__init__("schedule", entityManager, apiClient)
-        self._proc_ent_name = "schedule_process"
-        self._season_type_seq = SeasonTypeSequence()
-        self._last_process_data = None
-        self._min_process_data = None
         self._min_season = 2017
-        self._min_sync_season = None
-        self._min_sync_season_type = None
-        self._min_sync_week = None
 
     async def sync(self, all : bool = False) -> List[dict]:
         schedules = []
-        for season in range(await self._minSyncSeason(), util.getSeason() + 1):
-            schedule = self._apiClient.getSchedule(season=season)
-            schedules.extend(await self.save(schedule))
+        aqf = await self._getAPIQueryFilter()
+        if aqf is not None:
+            for f in aqf:
+                schedule = self._apiClient.getSchedule(**f)
+                schedules.extend(await self.save(schedule))
         return schedules
 
     async def save(self, data : List[dict]) -> List[dict]:
         if len(data) > 0:
+            # add teams if not already exists
+            for rec in data:
+                if "teams" not in rec:
+                    rec["teams"] = [rec["home_team"], rec["away_team"]]
             data = await super(ScheduleManagerFacade, self).save(data)
         return data
 
@@ -37,20 +35,35 @@ class ScheduleManagerFacade(DataManagerFacade):
                    seasons : List[int] = None,
                    season_types : List[str] = None,
                    weeks : List[int] = None,
+                   finished : bool = None,
                    last : bool = False,
                    next : bool = False) -> List[dict]:
         if last:
-            seasons = [await self._findLastSeason()]
-            season_types = [await self._findLastSeasonType()]
-            weeks = [await self._findLastWeek()]
+            recs = await self.find(finished=True)
+            if len(recs) > 0:
+                recs = [self._filterLastWeek(recs)]
         elif next:
-            seasons = [await self._findNextSeason()]
-            season_types = [await self._findNextSeasonType()]
-            weeks = [await self._findNextWeek()]
-        return await super(ScheduleManagerFacade, self).find(teams=teams,
-                                                             seasons=seasons,
-                                                             season_types=season_types,
-                                                             weeks=weeks)
+            recs = await self.find(finished=False)
+            if len(recs) > 0:
+                recs = [self._filterFirstWeek(recs)]
+        else:
+            if finished is not None:
+                finished = [finished]
+            if weeks is not None and season_types is not None and season_types == ["postseason"]:
+                # we allow postseason weeks to be specified either
+                # in the range 1 to 4, or 18 to 22
+                for i in range(0, len(weeks)):
+                    if weeks[i] < 18:
+                        if weeks[i] == 4:
+                            weeks[i] = 22
+                        else:
+                            weeks[i] += 17
+            recs = await super(ScheduleManagerFacade, self).find(teams=teams,
+                                                                 seasons=seasons,
+                                                                 season_types=season_types,
+                                                                 weeks=weeks,
+                                                                 finished=finished)
+        return recs
 
     async def delete(self, teams : List[str] = None,
                      seasons : List[int] = None,
@@ -61,6 +74,42 @@ class ScheduleManagerFacade(DataManagerFacade):
                                                                season_types=season_types,
                                                                weeks=weeks)
 
+    async def _getAPIQueryFilter(self) -> List[dict]:
+        ufdata = await self.find(finished=False)
+        qf = None
+        if len(ufdata) > 0:
+            qf = []
+            qd = {}
+            for d in ufdata:
+                cd = qd
+                for k in ["season", "season_type", "week"]:
+                    if not d[k] in cd:
+                        cd[d[k]] = {}
+                    cd = cd[d[k]]
+            for s in qd:
+                for st in qd[s]:
+                    for w in qd[s][st]:
+                        qf.append({"season": s, "season_type": st, "week": w})
+        elif len(await self.find(finished=True)) == 0 or len(await self.find()) == 0:
+            qf = [{"season": s} for s in range(self._min_season, util.getSeason() + 1)]
+        elif len(await self.find(seasons=[util.getSeason()])) == 0:
+            # We don't have data for the current season so we need to query it
+            qf = [{"season": util.getSeason()}]
+        else:
+            s = util.getSeason()
+            st = "postseason"
+            psrecs = await self.find(seasons=[s], season_types=[st])
+            if len(psrecs) < 11:
+                # more postseason games to come
+                qf = []
+                wks = set([r["week"] for r in psrecs])
+                mw = 1
+                if len(wks) > 0:
+                    mw = min(wks) + 1
+                for w in range(mw, 5):
+                    qf.append({"season": s, "season_type": st, "week": w})
+        return qf
+
     def _getQueryModel(self, **kwargs) -> QueryModel:
         qm = QueryModel()
         if kwargs["teams"] is not None:
@@ -68,96 +117,24 @@ class ScheduleManagerFacade(DataManagerFacade):
         cmap = {
             "season": kwargs["seasons"] if "seasons" in kwargs else None,
             "season_type": kwargs["season_types"] if "season_types" in kwargs else None,
-            "week": kwargs["weeks"] if "weeks" in kwargs else None
+            "week": kwargs["weeks"] if "weeks" in kwargs else None,
+            "finished": kwargs["finished"] if "finished" in kwargs else None
         }
         for name in cmap:
             if cmap[name] is not None:
                 qm.cand(name, cmap[name], Operator.IN)
         return qm
 
-    async def _findLastSeason(self) -> int:
-        pd = await self._lastProcessData()
-        return pd["season"] if pd is not None else None
+    def _filterLastWeek(self, recs : List[dict]) -> dict:
+        recs = self._sortSchedules(recs)
+        return recs[len(recs)-1]
 
-    async def _findNextSeason(self) -> int:
-        pd = await self._minProcessData()
-        return pd["season"]
+    def _filterFirstWeek(self, recs : List[dict]) -> dict:
+        recs = self._sortSchedules(recs)
+        return recs[0]
 
-    async def _findLastSeasonType(self) -> str:
-        pd = await self._lastProcessData()
-        return pd["season_type"] if pd is not None else None
-
-    async def _findNextSeasonType(self) -> str:
-        pd = await self._minProcessData()
-        return pd["season_type"]
-
-    async def _findLastWeek(self) -> int:
-        pd = await self._lastProcessData()
-        return pd["week"] if pd is not None else None
-
-    async def _findNextWeek(self) -> int:
-        pd = await self._minProcessData()
-        return pd["week"]
-
-    async def _lastProcessData(self) -> dict:
-        if self._last_process_data is None:
-            curpdata = await self._entityManager.find(self._proc_ent_name)
-            if len(curpdata) > 0:
-                self._last_process_data = curpdata[0]
-        return self._last_process_data
-
-    async def _minProcessData(self) -> dict:
-        if self._min_process_data is None:
-            lpdata = await self._lastProcessData()
-            if lpdata is None:
-                lpdata = {
-                    "season": self._min_season,
-                    "season_type": self._season_type_seq.min,
-                    "week": 0
-                }
-            else:
-                if lpdata["week"] == 22:
-                    # We last processed the last week of postseason
-                    # so next update should be the first week of
-                    # the next preseason
-                    lpdata["season"] += 1
-                    lpdata["season_type"] = self._season_type_seq.min
-                    lpdata["week"] = 0
-                elif lpdata["week"] == 4 and lpdata["season_type"] == self._season_type_seq.min:
-                    # We last processed the last week of preseason
-                    # so next update should be the first week of
-                    # the regular_season
-                    self._season_type_seq.current = lpdata["season_type"]
-                    lpdata["season_type"] = self._season_type_seq.next
-                    lpdata["week"] = 1
-                elif lpdata["week"] == 17:
-                    # We last processed the last week of regular_season
-                    # so next update should be the first week of
-                    # the postseason
-                    self._season_type_seq.current = lpdata["season_type"]
-                    lpdata["season_type"] = self._season_type_seq.next
-                    lpdata["week"] = 1
-                else:
-                    # We last processed an intraweek of the recorded
-                    # season_type so we just need to increment
-                    lpdata["week"] += 1
-            self._min_process_data = lpdata
-        return self._min_process_data
-
-    async def _minSyncSeason(self) -> int:
-        if self._min_sync_season is None:
-            lpdata = await self._minProcessData()
-            self._min_sync_season = lpdata["season"]
-        return self._min_sync_season
-
-    async def _minSyncSeasonType(self) -> int:
-        if self._min_sync_season_type is None:
-            lpdata = await self._minProcessData()
-            self._min_sync_season_type = lpdata["season_type"]
-        return self._min_sync_season_type
-
-    async def _minSyncWeek(self) -> int:
-        if self._min_sync_week is None:
-            lpdata = await self._minProcessData()
-            self._min_sync_week = lpdata["week"]
-        return self._min_sync_week
+    def _sortSchedules(self, recs : List[dict]) -> List[dict]:
+        def skey(rec) -> float:
+            return int(rec["gsis_id"])
+        recs.sort(key=skey)
+        return recs
