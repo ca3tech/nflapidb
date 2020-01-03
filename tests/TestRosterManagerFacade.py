@@ -141,6 +141,39 @@ class TestRosterManagerFacade(unittest.TestCase):
         xdata = [_ for _ in srcdata if _["profile_id"] != 2562399]
         self.assertEqual(dbrecs, xdata, "db records differ")
 
+    def test__getQueryModel_player_abbreviations_one(self):
+        rmgr = self._getRosterManager()
+        qm = rmgr._getQueryModel(player_abbreviations=["C.Wollam"])
+        xconst = {"$and": [
+            {"last_name": {"$regex": "^wollam", "$options": "i"}},
+            {"first_name": {"$regex": "^c.*", "$options": "i"}}
+        ]}
+        self.assertEqual(qm.constraint, xconst)
+
+    def test__getQueryModel_player_abbreviations_one_suffix(self):
+        rmgr = self._getRosterManager()
+        qm = rmgr._getQueryModel(player_abbreviations=["C.Wollam Jr."])
+        xconst = {"$and": [
+            {"last_name": {"$regex": r"^wollam( jr)*", "$options": "i"}},
+            {"first_name": {"$regex": "^c.*", "$options": "i"}}
+        ]}
+        self.assertEqual(qm.constraint, xconst)
+
+    def test__getQueryModel_player_abbreviations_two(self):
+        rmgr = self._getRosterManager()
+        qm = rmgr._getQueryModel(player_abbreviations=["C.Wollam", "M.King"])
+        xconst = {"$or": [
+            {"$and": [
+                {"last_name": {"$regex": "^wollam", "$options": "i"}},
+                {"first_name": {"$regex": "^c.*", "$options": "i"}}
+            ]},
+            {"$and": [
+                {"last_name": {"$regex": "^king", "$options": "i"}},
+                {"first_name": {"$regex": "^m.*", "$options": "i"}}
+            ]}
+        ]}
+        self.assertEqual(qm.constraint, xconst)
+
 class MockTeamManagerFacade(TeamManagerFacade):
     def __init__(self, entityManager : EntityManager, apiClient : nflapi.Client.Client, findData : List[dict]):
         super(MockTeamManagerFacade, self).__init__(entityManager, apiClient)

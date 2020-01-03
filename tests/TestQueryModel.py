@@ -11,6 +11,11 @@ class TestQueryModel(unittest.TestCase):
         qmodel = QueryModel()
         self.assertEqual(qmodel.select(withId=True), {})
 
+    def test_select_no_constraint_with_id_sincludeId(self):
+        qmodel = QueryModel()
+        qmodel.sincludeID()
+        self.assertEqual(qmodel.select(), {})
+
     def test_select_one_include(self):
         qmodel = QueryModel()
         self.assertEqual(qmodel.select(column1=True), {"_id": False, "column1": True})
@@ -58,6 +63,16 @@ class TestQueryModel(unittest.TestCase):
         qmodel = QueryModel()
         qmodel.cstart("column1", ["hello", "world"], Operator.negate(Operator.IN))
         self.assertEqual(qmodel.constraint, {"column1": {"$not": {"$in": ["hello", "world"]}}})
+
+    def test_constraint_one_constraint_regex_no_opt(self):
+        qmodel = QueryModel()
+        qmodel.cstart("column1", "hello", Operator.REGEX)
+        self.assertEqual(qmodel.constraint, {"column1": {"$regex": "hello"}})
+
+    def test_constraint_one_constraint_regex_opt(self):
+        qmodel = QueryModel()
+        qmodel.cstart("column1", "hello", Operator.REGEX, "i")
+        self.assertEqual(qmodel.constraint, {"column1": {"$regex": "hello", "$options": "i"}})
 
     def test_constraint_two_constraint_and(self):
         qmodel = QueryModel()

@@ -24,6 +24,14 @@ class Operator:
         return dict([("$nin", value)])
 
     @staticmethod
+    def REGEX(value : Any, options : str = None) -> dict:
+        """Regular Expression Match"""
+        dt = [("$regex", value)]
+        if options is not None:
+            dt.append(("$options", options))
+        return dict(dt)
+
+    @staticmethod
     def GT(value : Any) -> dict:
         """Greater Than"""
         return dict([("$gt", value)])
@@ -55,10 +63,11 @@ class QueryModel:
 
     def select(self, withId : bool = False, **kwargs) -> dict:
         sd = self._select.copy()
-        if not withId:
-            sd["_id"] = False
-        elif "_id" in sd:
-            del sd["_id"]
+        if "_id" in sd:
+            if not withId:
+                sd["_id"] = False
+            else:
+                del sd["_id"]
         if len(kwargs):
             sd.update(kwargs)
         return sd
@@ -84,28 +93,45 @@ class QueryModel:
     def constraint(self, value : dict):
         self._constraint = value
 
-    def cstart(self, name : str, value : Any, operator : callable = Operator.EQ):
-        cnst = dict([(name, operator(value))])
+    def cstart(self, name : str, value : Any, operator : callable = Operator.EQ, operator_options : Any = None):
+        if operator_options is None:
+            cnst = dict([(name, operator(value))])
+        else:
+            cnst = dict([(name, operator(value, operator_options))])
         self.constraint = cnst
         return self
 
-    def cand(self, name : str, value : Any, operator : callable = Operator.EQ):
-        self._cappend(name, value, operator, "$and")
+    def cand(self, name : str = None, value : Any = None, operator : callable = Operator.EQ, operator_options : Any = None, query_model : Any = None):
+        # type: (QueryModel, str, Any, callable, Any, QueryModel)
+        self._cappend(name, value, operator, operator_options, "$and", query_model)
         return self
 
-    def cor(self, name : str, value : Any, operator : callable = Operator.EQ):
-        self._cappend(name, value, operator, "$or")
+    def cor(self, name : str = None, value : Any = None, operator : callable = Operator.EQ, operator_options : Any = None, query_model : Any = None):
+        # type: (QueryModel, str, Any, callable, Any, QueryModel)
+        self._cappend(name, value, operator, operator_options, "$or", query_model)
         return self
 
-    def cnor(self, name : str, value : Any, operator : callable = Operator.EQ):
-        self._cappend(name, value, operator, "$nor")
+    def cnor(self, name : str = None, value : Any = None, operator : callable = Operator.EQ, operator_options : Any = None, query_model : Any = None):
+        # type: (QueryModel, str, Any, callable, Any, QueryModel)
+        self._cappend(name, value, operator, operator_options, "$nor", query_model)
         return self
 
-    def _cappend(self, name : str, value : Any, operator : callable, loperator : str):
-        if self._constraint is None:
-            self.cstart(name, value, operator)
+    def _cappend(self, name : str, value : Any, operator : callable, operator_options : Any, loperator : str, query_model : Any):
+        # type: (QueryModel, str, Any, callable, Any, str, QueryModel)
+        cnst = None
+        if query_model is not None:
+            if self._constraint is None:
+                self._constraint = query_model.constraint
+            else:
+                cnst = query_model.constraint
         else:
-            cnst = dict([(name, operator(value))])
+            if operator_options is None:
+                cnst = dict([(name, operator(value))])
+            else:
+                cnst = dict([(name, operator(value, operator_options))])
+        if self._constraint is None:
+            self.cstart(name, value, operator, operator_options)
+        elif cnst is not None:
             if loperator in self._constraint:
                 self._constraint[loperator].append(cnst)
             else:

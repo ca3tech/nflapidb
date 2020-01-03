@@ -1,4 +1,5 @@
 from typing import List
+import re
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
@@ -31,11 +32,13 @@ class RosterManagerFacade(DataManagerFacade):
                    last_names : List[str] = None,
                    first_names : List[str] = None,
                    profile_ids : List[int] = None,
+                   player_abbreviations : List[str] = None,
                    include_previous_teams : bool = False) -> List[dict]:
         return await super(RosterManagerFacade, self).find(teams=teams, positions=positions,
                                                            last_names=last_names,
                                                            first_names=first_names,
                                                            profile_ids=profile_ids,
+                                                           player_abbreviations=player_abbreviations,
                                                            include_previous_teams=include_previous_teams)
 
     async def delete(self, teams : List[str] = None,
@@ -51,7 +54,7 @@ class RosterManagerFacade(DataManagerFacade):
 
     def _getQueryModel(self, **kwargs) -> QueryModel:
         qm = QueryModel()
-        if kwargs["teams"] is not None:
+        if "teams" in kwargs and kwargs["teams"] is not None:
             qm.cstart("team", kwargs["teams"], Operator.IN)
             if "include_previous_teams" in kwargs and kwargs["include_previous_teams"]:
                 qm.cor("previous_teams", kwargs["teams"], Operator.IN)
@@ -64,6 +67,20 @@ class RosterManagerFacade(DataManagerFacade):
         for name in cmap:
             if cmap[name] is not None:
                 qm.cand(name, cmap[name], Operator.IN)
+        if "player_abbreviations" in kwargs and kwargs["player_abbreviations"] is not None:
+            paqm = QueryModel()
+            for pabb in kwargs["player_abbreviations"]:
+                curqm = QueryModel()
+                fi, ln = pabb.lstrip(" ").rstrip(". ").split(".")
+                fi = fi.lower()
+                ln = ln.lower()
+                if re.search(" ", ln) is not None:
+                    ln = re.sub(" {2,}", " ", ln)
+                    ln = re.sub("( [^ ]+)", r"(\1)*", ln)
+                curqm.cstart("last_name", f"^{ln}", Operator.REGEX, "i")
+                curqm.cand("first_name", f"^{fi}.*", Operator.REGEX, "i")
+                paqm.cor(query_model=curqm)
+            qm.cand(query_model=paqm)
         return qm
 
     async def _setPreviousTeams(self, rosters : List[dict]) -> List[dict]:

@@ -31,14 +31,17 @@ class ScheduleManagerFacade(DataManagerFacade):
             data = await super(ScheduleManagerFacade, self).save(data)
         return data
 
-    async def find(self, teams : List[str] = None,
+    async def find(self, qm : QueryModel = None,
+                   teams : List[str] = None,
                    seasons : List[int] = None,
                    season_types : List[str] = None,
                    weeks : List[int] = None,
                    finished : bool = None,
                    last : bool = False,
                    next : bool = False) -> List[dict]:
-        if last:
+        if qm is not None:
+            recs = await super(ScheduleManagerFacade, self).find(qm=qm)
+        elif last:
             recs = await self.find(finished=True)
             if len(recs) > 0:
                 recs = self._filterLastWeek(recs)
