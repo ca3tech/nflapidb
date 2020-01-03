@@ -1,38 +1,23 @@
 from typing import List
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
-from nflapidb.DataManagerFacade import DataManagerFacade
+from nflapidb.ScheduleDependantManagerFacade import ScheduleDependantManagerFacade
 from nflapidb.ScheduleManagerFacade import ScheduleManagerFacade
 from nflapidb.RosterManagerFacade import RosterManagerFacade
 from nflapidb.TeamManagerFacade import TeamManagerFacade
 from nflapidb.QueryModel import QueryModel, Operator
 import nflapidb.Utilities as util
 
-class GameSummaryManagerFacade(DataManagerFacade):
+class GameSummaryManagerFacade(ScheduleDependantManagerFacade):
 
     def __init__(self, entityManager : EntityManager,
                  apiClient : nflapi.Client.Client = None,
                  scheduleManager : ScheduleManagerFacade = None,
                  rosterManager : RosterManagerFacade = None,
                  teamManager : TeamManagerFacade = None):
-        super(GameSummaryManagerFacade, self).__init__("game_summary", entityManager, apiClient)
-        self._schmgr = scheduleManager
+        super(GameSummaryManagerFacade, self).__init__("game_summary", entityManager, apiClient, scheduleManager)
         self._rostmgr = rosterManager
         self._tmgr = teamManager
-
-    async def sync(self) -> List[dict]:
-        gsidqm = QueryModel()
-        gsidqm.sinclude(["gsis_id"])
-        cgsidd = await self.find(qm=gsidqm)
-        cgsids = list(set([r["gsis_id"] for r in cgsidd]))
-        schmgr = self._scheduleManager
-        schqm = None
-        if len(cgsids) > 0:
-            schqm = QueryModel()
-            schqm.cstart("gsis_id", cgsids, Operator.NIN)
-            schqm.cand("finished", True)
-        sch = await schmgr.find(qm=schqm)
-        return await self.save(self._apiClient.getGameSummary(sch))
 
     async def save(self, data : List[dict]) -> List[dict]:
         if len(data) > 0:
@@ -56,11 +41,8 @@ class GameSummaryManagerFacade(DataManagerFacade):
                                                                   player_ids=player_ids,
                                                                   profile_ids=profile_ids)
 
-    @property
-    def _scheduleManager(self):
-        if self._schmgr is None:
-            self._schmgr = ScheduleManagerFacade(self._entityManager, self._apiClient)
-        return self._schmgr
+    def _queryAPI(self, schedules : List[dict]) -> List[dict]:
+        return self._apiClient.getGameSummary(schedules)
 
     @property
     def _rosterManager(self):
