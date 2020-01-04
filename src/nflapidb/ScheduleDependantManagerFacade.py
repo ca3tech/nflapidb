@@ -36,3 +36,13 @@ class ScheduleDependantManagerFacade(DataManagerFacade):
         if self._schmgr is None:
             self._schmgr = ScheduleManagerFacade(self._entityManager, self._apiClient)
         return self._schmgr
+
+    def _getQueryModel(self, cmap : dict) -> QueryModel:
+        qm = QueryModel()
+        for name in cmap:
+            if cmap[name] is not None:
+                if isinstance(cmap[name], list):
+                    qm.cand(name, cmap[name], Operator.IN)
+                else:
+                    qm.cand(name, cmap[name], Operator.EQ)
+        return qm

@@ -24,11 +24,7 @@ class GameScoreManagerFacade(ScheduleDependantManagerFacade):
         return self._apiClient.getGameScore(schedules)
 
     def _getQueryModel(self, **kwargs) -> QueryModel:
-        qm = QueryModel()
         cmap = {
             "gsis_id": kwargs["gsis_ids"] if "gsis_ids" in kwargs else None
         }
-        for name in cmap:
-            if cmap[name] is not None:
-                qm.cand(name, cmap[name], Operator.IN)
-        return qm
+        return super(GameScoreManagerFacade, self)._getQueryModel(cmap)
