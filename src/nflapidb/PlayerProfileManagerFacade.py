@@ -1,4 +1,5 @@
 from typing import List
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
@@ -15,12 +16,15 @@ class PlayerProfileManagerFacade(DataManagerFacade):
         self._rmgr = rosterManager
 
     async def sync(self, all : bool = False) -> List[dict]:
+        logging.info("Syncing player profile data...")
         rmgr = self._rosterManager
         recs = await rmgr.find()
         recs = await self._filterUnchangedRosters(recs, all)
+        logging.info("Retrieving player profiles from NFL API...")
         return await self.save(self._apiClient.getPlayerProfile(recs))
 
     async def save(self, data : List[dict]) -> List[dict]:
+        logging.info("Saving player profile data...")
         if len(data) > 0:
             cdata = await self._setPreviousTeams(data)
             data = await super(PlayerProfileManagerFacade, self).save(cdata)

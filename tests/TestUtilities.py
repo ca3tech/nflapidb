@@ -39,3 +39,25 @@ class TestUtilities(unittest.TestCase):
         q = [{"col1": "a", "col3": "a"}]
         d = [{"col1": "a", "col2": 1}]
         self.assertEqual(util.ddquery(q, d), ([], d,))
+
+    def test_parseNameAbbreviation(self):
+        abbr = "C.Wollam"
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam"), abbr)
+        abbr = "C Wollam"
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam"), abbr)
+        abbr = "C.Wollam Jr."
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam( *jr)*"), abbr)
+        abbr = "C Wollam Jr."
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam( *jr)*"), abbr)
+        abbr = "C.Wollam Jr"
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam( *jr)*"), abbr)
+        abbr = "C Wollam Jr"
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam( *jr)*"), abbr)
+        abbr = "C.Wollam II"
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam( *ii)*"), abbr)
+        abbr = "C Wollam II"
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^wollam( *ii)*"), abbr)
+        abbr = "C.St. Wollam"
+        self.assertEqual(util.parseNameAbbreviation(abbr), ("^c.*", "^st[\\. ]*wollam"), abbr)
+        abbr = "TOUCHBACK"
+        self.assertEqual(util.parseNameAbbreviation(abbr), (None, "^touchback"), abbr)

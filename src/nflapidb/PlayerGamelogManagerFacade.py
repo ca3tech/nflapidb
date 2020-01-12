@@ -1,5 +1,6 @@
 from typing import List
 import datetime
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
@@ -22,6 +23,7 @@ class PlayerGamelogManagerFacade(DataManagerFacade):
         self._last_process_date = None
 
     async def sync(self, all : bool = False) -> List[dict]:
+        logging.info("Syncing player gamelog data...")
         rmgr = self._rosterManager
         recs = await rmgr.find()
         if not (all or await self._isDataExpired()):
@@ -29,6 +31,7 @@ class PlayerGamelogManagerFacade(DataManagerFacade):
             all = True
         gl = []
         if len(recs) > 0:
+            logging.info("Retrieving player gamelogs from NFL API...")
             if all:
                 mnseason = self._min_season
             else:
@@ -41,6 +44,7 @@ class PlayerGamelogManagerFacade(DataManagerFacade):
         return gl
 
     async def save(self, data : List[dict]) -> List[dict]:
+        logging.info("Saving player gamelog data...")
         if len(data) > 0:
             cdata = await self._setPreviousTeams(data)
             data = await super(PlayerGamelogManagerFacade, self).save(cdata)
@@ -168,6 +172,7 @@ class PlayerGamelogManagerFacade(DataManagerFacade):
         return x
 
     async def _updateDataExpired(self, processDate : datetime.datetime = None):
+        logging.info("Saving player gamelog processing information...")
         if processDate is None:
             processDate = self._process_date
         await self._entityManager.delete(self._plr_gl_proc_ent_name)

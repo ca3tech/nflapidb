@@ -1,4 +1,5 @@
 from typing import List
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.PlayerSchedDepManagerFacade import PlayerSchedDepManagerFacade
@@ -38,6 +39,7 @@ class GamePlayManagerFacade(PlayerSchedDepManagerFacade):
                                                                profile_ids=profile_ids)
 
     def _queryAPI(self, schedules : List[dict]) -> List[dict]:
+        logging.info("Retrieving {} data from NFL API...".format(self._entity_name))
         return self._apiClient.getGamePlay(schedules)
 
     def _getQueryModel(self, **kwargs) -> QueryModel:

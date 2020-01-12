@@ -1,5 +1,6 @@
 from typing import List
 import re
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
@@ -16,12 +17,15 @@ class RosterManagerFacade(DataManagerFacade):
         self._tmgr = teamManager
 
     async def sync(self) -> List[dict]:
+        logging.info("Syncing roster data...")
         tmgr = self._teamManager
         trecs = await tmgr.find()
         teams = [rec["team"] for rec in trecs]
+        logging.info("Retrieving rosters from NFL API...")
         return await self.save(self._apiClient.getRoster(teams))
 
     async def save(self, data : List[dict]) -> List[dict]:
+        logging.info("Saving {} rosters...".format(len(data)))
         if len(data) > 0:
             cdata = await self._setPreviousTeams(data)
             data = await super(RosterManagerFacade, self).save(cdata)
@@ -70,16 +74,14 @@ class RosterManagerFacade(DataManagerFacade):
         if "player_abbreviations" in kwargs and kwargs["player_abbreviations"] is not None:
             paqm = QueryModel()
             for pabb in kwargs["player_abbreviations"]:
-                curqm = QueryModel()
-                fi, ln = pabb.lstrip(" ").rstrip(". ").split(".")
-                fi = fi.lower()
-                ln = ln.lower()
-                if re.search(" ", ln) is not None:
-                    ln = re.sub(" {2,}", " ", ln)
-                    ln = re.sub("( [^ ]+)", r"(\1)*", ln)
-                curqm.cstart("last_name", f"^{ln}", Operator.REGEX, "i")
-                curqm.cand("first_name", f"^{fi}.*", Operator.REGEX, "i")
-                paqm.cor(query_model=curqm)
+                if not (pabb is None or pabb == ""):
+                    curqm = QueryModel()
+                    fi, ln = util.parseNameAbbreviation(pabb)
+                    if not (fi is None and ln is None):
+                        if fi is not None:
+                            curqm.cstart("first_name", fi, Operator.REGEX, "i")
+                        curqm.cand("last_name", ln, Operator.REGEX, "i")
+                        paqm.cor(query_model=curqm)
             qm.cand(query_model=paqm)
         return qm
 

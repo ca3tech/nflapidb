@@ -145,8 +145,8 @@ class TestRosterManagerFacade(unittest.TestCase):
         rmgr = self._getRosterManager()
         qm = rmgr._getQueryModel(player_abbreviations=["C.Wollam"])
         xconst = {"$and": [
-            {"last_name": {"$regex": "^wollam", "$options": "i"}},
-            {"first_name": {"$regex": "^c.*", "$options": "i"}}
+            {"first_name": {"$regex": "^c.*", "$options": "i"}},
+            {"last_name": {"$regex": "^wollam", "$options": "i"}}
         ]}
         self.assertEqual(qm.constraint, xconst)
 
@@ -154,8 +154,8 @@ class TestRosterManagerFacade(unittest.TestCase):
         rmgr = self._getRosterManager()
         qm = rmgr._getQueryModel(player_abbreviations=["C.Wollam Jr."])
         xconst = {"$and": [
-            {"last_name": {"$regex": r"^wollam( jr)*", "$options": "i"}},
-            {"first_name": {"$regex": "^c.*", "$options": "i"}}
+            {"first_name": {"$regex": "^c.*", "$options": "i"}},
+            {"last_name": {"$regex": "^wollam( *jr)*", "$options": "i"}}
         ]}
         self.assertEqual(qm.constraint, xconst)
 
@@ -164,12 +164,12 @@ class TestRosterManagerFacade(unittest.TestCase):
         qm = rmgr._getQueryModel(player_abbreviations=["C.Wollam", "M.King"])
         xconst = {"$or": [
             {"$and": [
-                {"last_name": {"$regex": "^wollam", "$options": "i"}},
-                {"first_name": {"$regex": "^c.*", "$options": "i"}}
+                {"first_name": {"$regex": "^c.*", "$options": "i"}},
+                {"last_name": {"$regex": "^wollam", "$options": "i"}}
             ]},
             {"$and": [
-                {"last_name": {"$regex": "^king", "$options": "i"}},
-                {"first_name": {"$regex": "^m.*", "$options": "i"}}
+                {"first_name": {"$regex": "^m.*", "$options": "i"}},
+                {"last_name": {"$regex": "^king", "$options": "i"}}
             ]}
         ]}
         self.assertEqual(qm.constraint, xconst)

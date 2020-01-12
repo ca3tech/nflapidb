@@ -1,4 +1,5 @@
 from typing import List, abstractmethod
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
@@ -14,16 +15,16 @@ class ScheduleDependantManagerFacade(DataManagerFacade):
         self._schmgr = scheduleManager
 
     async def sync(self) -> List[dict]:
+        logging.info("Syncing {} data...".format(self._entity_name))
         gsidqm = QueryModel()
         gsidqm.sinclude(["gsis_id"])
         cgsidd = await self.find(qm=gsidqm)
         cgsids = list(set([r["gsis_id"] for r in cgsidd]))
         schmgr = self._scheduleManager
-        schqm = None
+        schqm = QueryModel()
+        schqm.cstart("finished", True)
         if len(cgsids) > 0:
-            schqm = QueryModel()
-            schqm.cstart("gsis_id", cgsids, Operator.NIN)
-            schqm.cand("finished", True)
+            schqm.cand("gsis_id", cgsids, Operator.NIN)
         sch = await schmgr.find(qm=schqm)
         return await self.save(self._queryAPI(sch))
 

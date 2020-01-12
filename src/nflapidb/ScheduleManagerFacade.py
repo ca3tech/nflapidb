@@ -1,5 +1,6 @@
 from typing import List
 import datetime
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
@@ -14,15 +15,18 @@ class ScheduleManagerFacade(DataManagerFacade):
         self._min_season = 2017
 
     async def sync(self, all : bool = False) -> List[dict]:
+        logging.info("Syncing schedule data...")
         schedules = []
         aqf = await self._getAPIQueryFilter()
         if aqf is not None:
+            logging.info("Retrieving schedules from NFL API...")
             for f in aqf:
                 schedule = self._apiClient.getSchedule(**f)
                 schedules.extend(await self.save(schedule))
         return schedules
 
     async def save(self, data : List[dict]) -> List[dict]:
+        logging.info("Saving schedule data...")
         if len(data) > 0:
             # add teams if not already exists
             for rec in data:
@@ -92,6 +96,11 @@ class ScheduleManagerFacade(DataManagerFacade):
             for s in qd:
                 for st in qd[s]:
                     for w in qd[s][st]:
+                        if st == "postseason" and w > 17:
+                            if w == 22:
+                                w = 4
+                            else:
+                                w = w - 17
                         qf.append({"season": s, "season_type": st, "week": w})
         elif len(await self.find(finished=True)) == 0 or len(await self.find()) == 0:
             qf = [{"season": s} for s in range(self._min_season, util.getSeason() + 1)]

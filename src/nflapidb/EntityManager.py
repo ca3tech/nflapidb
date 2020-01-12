@@ -5,9 +5,10 @@ from pymongo import ReturnDocument, IndexModel, ASCENDING
 from pymongo.errors import InvalidName
 from bson.codec_options import CodecOptions
 import importlib
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from time import struct_time
 import dateutil.parser
+import logging
 import nflapidb.Utilities as util
 from nflapidb.Entity import Entity
 
@@ -63,10 +64,12 @@ class EntityManager:
     async def save(self, entityName: str, data: List[dict]) -> List[dict]:
         col = await self._getCollection(entityName)
         pkeys = await self._primaryKey(col)
-        for i in range(0, len(data)):
+        dlen = len(data)
+        for i in range(0, dlen):
             datum = self._applyAttributeTypes(data[i], entityName)
             q = self._buildQueryItem(datum, pkeys)
             data[i] = await col.find_one_and_replace(q, datum, upsert=True, return_document=ReturnDocument.AFTER)
+            self._logProgress(i, dlen)
         return data
 
     async def find(self, entityName: str, query: dict=None, projection: dict=None, collection : AsyncIOMotorCollection=None) -> List[dict]:
@@ -90,6 +93,12 @@ class EntityManager:
     @_entity_dir_path.setter
     def _entity_dir_path(self, path : str):
         self._edpath = path
+
+    def _logProgress(self, recordIndex : int, recordCount : int):
+        rnum = recordIndex + 1
+        pct = int(rnum / recordCount)
+        if pct % 10 == 0:
+            logging.info("{} of {} complete".format(rnum, recordCount))
 
     def _applyAttributeTypes(self, datum : dict, entityName : str) -> dict:
         def dtparse(dt : Any) -> datetime:
@@ -121,9 +130,13 @@ class EntityManager:
                         dt = dateutil.parser.parse(dt, tzinfos=tzi)
             elif isinstance(dt, struct_time):
                 tzkey = dt.tm_zone
-                dt = datetime.datetime(dt.tm_year, dt.tm_mon, dt.tm_mday,
-                                       dt.tm_hour, dt.tm_min, dt.tm_sec,
-                                       tzinfo=datetime.timezone(datetime.timedelta(seconds=tzi[tzkey]), tzkey))
+                if tzkey is None:
+                    tzkey = "EST"
+                    if dt.tm_mon > 7 and dt.tm_mon < 12:
+                        tzkey = "EDT"
+                dt = datetime(dt.tm_year, dt.tm_mon, dt.tm_mday,
+                              dt.tm_hour, dt.tm_min, dt.tm_sec,
+                              tzinfo=timezone(timedelta(seconds=tzi[tzkey]), tzkey))
             return dt
         switch = {
             "int": int,

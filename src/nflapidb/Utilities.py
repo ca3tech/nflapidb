@@ -165,3 +165,28 @@ def getleafs(d : dict, path : [str] = []) -> dict:
             rd.update(getleafs(d[k], p))
     return rd
 
+def parseNameAbbreviation(abbrev : str) -> tuple:
+  fn = None
+  ln = None
+  if abbrev != "":
+    parts = [re.sub(" {2,}", " ", p.rstrip(" ").lstrip(" ").lower()) for p in re.split(r"\.", abbrev)]
+    if parts[len(parts)-1] == "":
+      parts.pop()
+    if len(parts) == 1:
+      parts = [s.lower() for s in re.split(" ", re.sub(r"\.", "", abbrev))]
+    if len(parts) == 1:
+      ln = "^{}".format(parts[len(parts)-1])
+    else:
+      fn = "^{}.*".format(parts[0])
+      def parseLast(lnp : List[str]) -> str:
+        if lnp[len(lnp)-1] in ["jr", "sr", "ii", "iii", "iv", "v", "vi", "vii", "viii"]:
+          sfx = lnp.pop()
+          lnp[len(lnp)-1] = "{}( *{})*".format(lnp[len(lnp)-1], sfx)
+        return "^{}".format("[\\. ]*".join(lnp))
+      if len(parts) > 2:
+        ln = parseLast(parts[1:len(parts)])
+      elif re.search(" ", parts[len(parts)-1]) is not None:
+        ln = parseLast(re.split(" ", parts[len(parts)-1]))
+      else:
+        ln = "^{}".format(parts[1])
+  return fn, ln

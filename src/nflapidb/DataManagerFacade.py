@@ -1,4 +1,5 @@
 from typing import List, abc, abstractmethod
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.QueryModel import QueryModel
@@ -21,6 +22,7 @@ class DataManagerFacade(abc.ABC):
         pass
 
     async def save(self, data : List[dict]) -> List[dict]:
+        logging.info("Saving {} {}s...".format(len(data), self._entity_name))
         return await self._entity_manager.save(self._entity_name, data)
 
     async def find(self, qm : QueryModel = None, **kwargs) -> List[dict]:

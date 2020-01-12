@@ -1,4 +1,5 @@
 from typing import List
+import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
 from nflapidb.DataManagerFacade import DataManagerFacade
@@ -11,7 +12,10 @@ class TeamManagerFacade(DataManagerFacade):
         super(TeamManagerFacade, self).__init__("team", entityManager, apiClient)
 
     async def sync(self) -> List[dict]:
-        return await self.save(await self._findNewTeams())
+        logging.info("Syncing team data...")
+        nteams = await self._findNewTeams()
+        logging.info("Saving {} teams...".format(len(nteams)))
+        return await self.save(nteams)
 
     async def find(self, teams : List[str] = None) -> List[dict]:
         return await super(TeamManagerFacade, self).find(teams=teams)
@@ -26,9 +30,8 @@ class TeamManagerFacade(DataManagerFacade):
         return qm
     
     async def _findNewTeams(self) -> List[dict]:
-        teams = []
-        for team in self._apiClient.getTeams():
-            teams.append({"team": team})
+        logging.info("Retrieving teams from NFL API...")
+        teams = self._apiClient.getTeams()
         cteams = await self.find()
         if len(cteams) > 0:
             tdiffs = util.ddquery(cteams, teams)
