@@ -18,10 +18,10 @@ class TestRosterManagerFacade(unittest.TestCase):
         util.runCoroutine(self.entmgr.drop(self.entityName))
         self.entmgr.dispose()
 
-    def _getMockRosterManager(self, teamData : List[dict], rosterData : List[dict]):
+    def _getMockRosterManager(self, teamData : List[dict], rosterData : List[dict], historicData : List[dict] = None):
         apiClient = MockApiClient(rosterData)
         tmmgr = MockTeamManagerFacade(self.entmgr, apiClient, teamData)
-        self.datamgr = RosterManagerFacade(self.entmgr, apiClient, tmmgr)
+        self.datamgr = MockRosterManagerFacade(self.entmgr, apiClient, tmmgr, historicData)
         return self.datamgr
 
     def _getRosterManager(self):
@@ -49,6 +49,24 @@ class TestRosterManagerFacade(unittest.TestCase):
         dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
         self.assertEqual(dbrecs, recs, "db records differ")
         self.assertEqual(rmgr._apiClient.getRequestedTeams(), set(["KC", "PIT"]), "requested teams differs")
+
+    def test_sync_initializes_collection_with_historic_data(self):
+        with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
+            srcdata = json.load(fp)
+        with open(os.path.join(os.path.dirname(__file__), "data", "roster_pit.json"), "rt") as fp:
+            histdata = json.load(fp)
+        rmgr = self._getMockRosterManager(teamData=[{"team": "KC"}], rosterData=srcdata, historicData=histdata)
+        recs = util.runCoroutine(rmgr.sync())
+        self.assertEqual(len(recs), len(srcdata) + len(histdata), "sync returned record count differs")
+        dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
+        self.assertEqual(dbrecs, recs, "db records differ")
+        self.assertEqual(rmgr._apiClient.getRequestedTeams(), set(["KC"]), "requested teams differs")
+
+    def test__getHistoricData(self):
+        with open("data/historic_roster.json", "rt") as fp:
+            hrdata = json.load(fp)
+        rmgr = self._getRosterManager()
+        self.assertEqual(rmgr._getHistoricData(), hrdata)
 
     def test_sync_stores_previous_team(self):
         teamData = [{"team": "KC"}, {"team": "PIT"}]
@@ -173,6 +191,17 @@ class TestRosterManagerFacade(unittest.TestCase):
             ]}
         ]}
         self.assertEqual(qm.constraint, xconst)
+
+class MockRosterManagerFacade(RosterManagerFacade):
+    def __init__(self, entityManager : EntityManager,
+                 apiClient : nflapi.Client.Client = None,
+                 teamManager : TeamManagerFacade = None,
+                 historicData : List[dict] = None):
+        super(MockRosterManagerFacade, self).__init__(entityManager, apiClient, teamManager)
+        self._historic_data = historicData
+
+    def _getHistoricData(self):
+        return self._historic_data
 
 class MockTeamManagerFacade(TeamManagerFacade):
     def __init__(self, entityManager : EntityManager, apiClient : nflapi.Client.Client, findData : List[dict]):

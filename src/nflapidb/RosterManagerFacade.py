@@ -1,5 +1,7 @@
 from typing import List
 import re
+import os
+import json
 import logging
 import nflapi.Client
 from nflapidb.EntityManager import EntityManager
@@ -21,8 +23,20 @@ class RosterManagerFacade(DataManagerFacade):
         tmgr = self._teamManager
         trecs = await tmgr.find()
         teams = [rec["team"] for rec in trecs]
+        data = []
+        logging.info("Retrieving current roster data...")
+        crosters = await self.find()
+        if len(crosters) == 0:
+            # We only initialize the collection with historic roster
+            # data if there is no data currently loaded
+            logging.info("Retrieving historic roster data...")
+            hrdata = self._getHistoricData()
+            if hrdata is not None and len(hrdata) > 0:
+                logging.info("Saving historic roster data...")
+                data.extend(await self.save(hrdata))
         logging.info("Retrieving rosters from NFL API...")
-        return await self.save(self._apiClient.getRoster(teams))
+        data.extend(await self.save(self._apiClient.getRoster(teams)))
+        return data
 
     async def save(self, data : List[dict]) -> List[dict]:
         logging.info("Saving {} rosters...".format(len(data)))
@@ -104,6 +118,15 @@ class RosterManagerFacade(DataManagerFacade):
                             pteams = list(set(pteams))
                         npmap[pid]["previous_teams"] = pteams
         return rosters
+
+    def _getHistoricData(self) -> List[dict]:
+        hddir = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+        hdfile = os.path.join(hddir, "historic_roster.json")
+        data = None
+        if os.path.exists(hdfile):
+            with open(hdfile, "rt") as fp:
+                data = json.load(fp)
+        return data
 
 def __makeProfileIdMap__(records : List[dict]) -> dict:
     pids = [_["profile_id"] for _ in records]
