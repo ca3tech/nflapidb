@@ -1911,6 +1911,7 @@
     "gamesplits_url": "http://www.nfl.com/player/jonathanowens/2561255/gamesplits",
     "height": "5'11\"",
     "last_name": "Owens",
+    "number": 36,
     "position": "DB",
     "profile_id": 2561255,
     "profile_name": "jonathanowens",
@@ -7599,7 +7600,8 @@
     "profile_url": "http://www.nfl.com/player/blainegabbert/2495441/profile",
     "status": "Active",
     "team": "TEN",
-    "weight": 235
+    "weight": 235,
+    "previous_teams": ["ARI", "JAX", "SF", "TEN"]
   },
   {
     "birthdate": "6/4/1992",
@@ -8989,7 +8991,8 @@
     "profile_url": "http://www.nfl.com/player/dannyamendola/2649/profile",
     "status": "Active",
     "team": "MIA",
-    "weight": 190
+    "weight": 190,
+    "previous_teams": ["MIA", "NE", "STL"]
   },
   {
     "birthdate": "12/29/1993",
@@ -24429,7 +24432,8 @@
     "profile_url": "http://www.nfl.com/player/kylewilber/2532974/profile",
     "status": "Active",
     "team": "OAK",
-    "weight": 245
+    "weight": 245,
+    "previous_teams": ["DAL"]
   },
   {
     "birthdate": "12/12/1994",
@@ -34745,7 +34749,8 @@
     "profile_url": "http://www.nfl.com/player/keithsmith/2550400/profile",
     "status": "Active",
     "team": "OAK",
-    "weight": 240
+    "weight": 240,
+    "previous_teams": ["ATL", "DAL"]
   },
   {
     "birthdate": "4/12/1990",
