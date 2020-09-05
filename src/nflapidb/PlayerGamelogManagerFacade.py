@@ -31,14 +31,14 @@ class PlayerGamelogManagerFacade(DataManagerFacade):
             all = True
         gl = []
         if len(recs) > 0:
-            logging.info("Retrieving player gamelogs from NFL API...")
             if all:
                 mnseason = self._min_season
             else:
                 mnseason = await self._minSyncSeason()
             mxseason = self._currentSeason
             for season in range(mnseason, mxseason + 1):
-                gl.extend(self._apiClient.getPlayerGameLog(rosters=recs, season=season))
+                logging.info("Retrieving player gamelogs for {rcnt} rosters for {ssn} season from NFL API...".format(rcnt=len(recs), ssn=season))
+                gl.extend(self._addRosterData(self._apiClient.getPlayerGameLog(rosters=recs, season=season), recs))
             await self.save(gl)
             await self._updateDataExpired()
         return gl
@@ -65,6 +65,17 @@ class PlayerGamelogManagerFacade(DataManagerFacade):
                      profile_ids : List[int] = None) -> List[dict]:
         return await super(PlayerGamelogManagerFacade, self).delete(teams=teams,
                                                                     profile_ids=profile_ids)
+
+    def _addRosterData(self, gmldata : List[dict], rostdata : List[dict]) -> List[dict]:
+        if gmldata is not None and rostdata is not None and len(gmldata) > 0 and len(rostdata) > 0:
+            rostidx = dict([(rostdata[i]["profile_id"], i) for i in range(0, len(rostdata))])
+            for pp in gmldata:
+                pid = pp["profile_id"]
+                if pid in rostidx:
+                    r = rostdata[rostidx[pid]]
+                    if "previous_teams" in r:
+                        pp["previous_teams"] = r["previous_teams"]
+        return gmldata
 
     @property
     def _rosterManager(self) -> RosterManagerFacade:

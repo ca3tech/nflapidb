@@ -31,7 +31,7 @@ class TeamManagerFacade(DataManagerFacade):
     
     async def _findNewTeams(self) -> List[dict]:
         logging.info("Retrieving teams from NFL API...")
-        teams = self._apiClient.getTeams()
+        teams = self._apiClient.getTeams(active_only=False)
         cteams = await self.find()
         if len(cteams) > 0:
             tdiffs = util.ddquery(cteams, teams)

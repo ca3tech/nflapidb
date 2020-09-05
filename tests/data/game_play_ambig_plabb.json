@@ -1,0 +1,506 @@
+[
+    {
+        "player_abrv_name": "K.Williams",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "K.Smith",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "A.Jones",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "J.Jones",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "J.Jones",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "B.Brown",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "T.Johnson",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "X.Williams",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "R.Allen",
+        "team": "ATL"
+    },
+    {
+        "player_abrv_name": "Ja.Jones",
+        "team": "ATL"
+    },
+    {
+        "player_abrv_name": "J.Williams",
+        "team": "BUF"
+    },
+    {
+        "player_abrv_name": "L.Johnson",
+        "team": "BUF"
+    },
+    {
+        "player_abrv_name": "J.Hill",
+        "team": "BAL"
+    },
+    {
+        "player_abrv_name": "B.Brown",
+        "team": "JAX"
+    },
+    {
+        "player_abrv_name": "P.Davis",
+        "team": "JAX"
+    },
+    {
+        "player_abrv_name": "B.Allen",
+        "team": "JAX"
+    },
+    {
+        "player_abrv_name": "A.Taylor",
+        "team": "GB"
+    },
+    {
+        "player_abrv_name": "E.Harris",
+        "team": "NO"
+    },
+    {
+        "player_abrv_name": "G.Smith",
+        "team": "NYG"
+    },
+    {
+        "player_abrv_name": "S.Johnson",
+        "team": "PIT"
+    },
+    {
+        "player_abrv_name": "D.Williams",
+        "team": "CIN"
+    },
+    {
+        "player_abrv_name": "C.Brown",
+        "team": "CIN"
+    },
+    {
+        "player_abrv_name": "St.Williams",
+        "team": "CIN"
+    },
+    {
+        "player_abrv_name": "A.Smith",
+        "team": "KC"
+    },
+    {
+        "player_abrv_name": "D.Harris",
+        "team": "KC"
+    },
+    {
+        "player_abrv_name": "C.Jones",
+        "team": "SF"
+    },
+    {
+        "player_abrv_name": "DO.Jones",
+        "team": "SF"
+    },
+    {
+        "player_abrv_name": "D.Walker",
+        "team": "TEN"
+    },
+    {
+        "player_abrv_name": "M.Williams",
+        "team": "NYJ"
+    },
+    {
+        "player_abrv_name": "J.Smith",
+        "team": "TEN"
+    },
+    {
+        "player_abrv_name": "K.Brown",
+        "team": "TEN"
+    },
+    {
+        "player_abrv_name": "A.Brown",
+        "team": "NYJ"
+    },
+    {
+        "player_abrv_name": "D.Brown",
+        "team": "TEN"
+    },
+    {
+        "player_abrv_name": "D.Smith",
+        "team": "TEN"
+    },
+    {
+        "player_abrv_name": "L.Jones",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "Z.Wood",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "S.Smith",
+        "team": "OAK"
+    },
+    {
+        "player_abrv_name": "C.Johnson",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "T.Williams",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "P.Brown",
+        "team": "OAK"
+    },
+    {
+        "player_abrv_name": "B.Williams",
+        "team": "IND"
+    },
+    {
+        "player_abrv_name": "T.Green",
+        "team": "IND"
+    },
+    {
+        "player_abrv_name": "Ty.Williams",
+        "team": "LAC"
+    },
+    {
+        "player_abrv_name": "S.Griffin",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "Tr.Williams",
+        "team": "LAC"
+    },
+    {
+        "player_abrv_name": "A.Williams",
+        "team": "LAC"
+    },
+    {
+        "player_abrv_name": "M.Smith",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "D.Carr",
+        "team": "OAK"
+    },
+    {
+        "player_abrv_name": "C.Jones",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "B.Harris",
+        "team": "NO"
+    },
+    {
+        "player_abrv_name": "J.Jenkins",
+        "team": "NYG"
+    },
+    {
+        "player_abrv_name": "J.Davis",
+        "team": "MIA"
+    },
+    {
+        "player_abrv_name": "T.Scott",
+        "team": "NYG"
+    },
+    {
+        "player_abrv_name": "J.Thomas",
+        "team": "CLE"
+    },
+    {
+        "player_abrv_name": "N.Harris",
+        "team": "OAK"
+    },
+    {
+        "player_abrv_name": "D.Williams",
+        "team": "NYJ"
+    },
+    {
+        "player_abrv_name": "T.Johnson",
+        "team": "CIN"
+    },
+    {
+        "player_abrv_name": "R.Brown",
+        "team": "CIN"
+    },
+    {
+        "player_abrv_name": "D.Harris",
+        "team": "JAX"
+    },
+    {
+        "player_abrv_name": "B.Hill",
+        "team": "MIN"
+    },
+    {
+        "player_abrv_name": "R.Smith",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "F.Brown",
+        "team": "OAK"
+    },
+    {
+        "player_abrv_name": "G.Johnson",
+        "team": "DET"
+    },
+    {
+        "player_abrv_name": "A.Peterson",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "A.Johnson",
+        "team": "IND"
+    },
+    {
+        "player_abrv_name": "J.Brown",
+        "team": "CIN"
+    },
+    {
+        "player_abrv_name": "T.Edmunds",
+        "team": "PIT"
+    },
+    {
+        "player_abrv_name": "J.Williams",
+        "team": "NO"
+    },
+    {
+        "player_abrv_name": "S.Thomas",
+        "team": "CLE"
+    },
+    {
+        "player_abrv_name": "R.Smith",
+        "team": "GB"
+    },
+    {
+        "player_abrv_name": "K.Williams",
+        "team": "KC"
+    },
+    {
+        "player_abrv_name": "D.Williams",
+        "team": "KC"
+    },
+    {
+        "player_abrv_name": "SL.Griffin",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "SM.Griffin",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "T.Adams",
+        "team": "IND"
+    },
+    {
+        "player_abrv_name": "K.Williams",
+        "team": "IND"
+    },
+    {
+        "player_abrv_name": "Tr.Williams",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "J.Adams",
+        "team": "NYJ"
+    },
+    {
+        "player_abrv_name": "JT.Jones",
+        "team": "ATL"
+    },
+    {
+        "player_abrv_name": "E.Smith",
+        "team": "ATL"
+    },
+    {
+        "player_abrv_name": "Bry.Williams",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "B.Johnson",
+        "team": "LAC"
+    },
+    {
+        "player_abrv_name": "T.Williams",
+        "team": "GB"
+    },
+    {
+        "player_abrv_name": "C.Johnson",
+        "team": "DET"
+    },
+    {
+        "player_abrv_name": "W.Johnson",
+        "team": "DET"
+    },
+    {
+        "player_abrv_name": "G.Smith",
+        "team": "ATL"
+    },
+    {
+        "player_abrv_name": "C.Phillips",
+        "team": "BUF"
+    },
+    {
+        "player_abrv_name": "T.Reed",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "C.Davis",
+        "team": "JAX"
+    },
+    {
+        "player_abrv_name": "C.Covington",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "TJ.Johnson",
+        "team": "CIN"
+    },
+    {
+        "player_abrv_name": "D.Smith",
+        "team": "WAS"
+    },
+    {
+        "player_abrv_name": "A.Jones",
+        "team": "DEN"
+    },
+    {
+        "player_abrv_name": "N.Williams",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "T.Williams",
+        "team": "LAC"
+    },
+    {
+        "player_abrv_name": "R.Smith",
+        "team": "NYG"
+    },
+    {
+        "player_abrv_name": "D.Scott",
+        "team": "NYG"
+    },
+    {
+        "player_abrv_name": "D.Jones",
+        "team": "JAX"
+    },
+    {
+        "player_abrv_name": "Ja.Smith",
+        "team": "BAL"
+    },
+    {
+        "player_abrv_name": "M.Smith",
+        "team": "WAS"
+    },
+    {
+        "player_abrv_name": "P.Johnson",
+        "team": "DET"
+    },
+    {
+        "player_abrv_name": "F.Jones",
+        "team": "DET"
+    },
+    {
+        "player_abrv_name": "D.Ross",
+        "team": "NE"
+    },
+    {
+        "player_abrv_name": "T.Johnson",
+        "team": "HOU"
+    },
+    {
+        "player_abrv_name": "C.Johnson",
+        "team": "HOU"
+    },
+    {
+        "player_abrv_name": "Ch.Jones",
+        "team": "ARI"
+    },
+    {
+        "player_abrv_name": "Sm.Griffin",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "Sq.Griffin",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "Em.Smith",
+        "team": "TB"
+    },
+    {
+        "player_abrv_name": "D.Smith",
+        "team": "MIN"
+    },
+    {
+        "player_abrv_name": "O.Johnson",
+        "team": "MIN"
+    },
+    {
+        "player_abrv_name": "S.Williams",
+        "team": "NO"
+    },
+    {
+        "player_abrv_name": "M.Brown",
+        "team": "OAK"
+    },
+    {
+        "player_abrv_name": "Cr.Covington",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "C.Anderson",
+        "team": "NYJ"
+    },
+    {
+        "player_abrv_name": "S.Smith",
+        "team": "BAL"
+    },
+    {
+        "player_abrv_name": "Jo.Smith",
+        "team": "TEN"
+    },
+    {
+        "player_abrv_name": "J.Johnson",
+        "team": "DET"
+    },
+    {
+        "player_abrv_name": "T.Williams",
+        "team": "NO"
+    },
+    {
+        "player_abrv_name": "K.Williams",
+        "team": "NO"
+    },
+    {
+        "player_abrv_name": "G.Johnson",
+        "team": "WAS"
+    },
+    {
+        "player_abrv_name": "T.Smith",
+        "team": "GB"
+    },
+    {
+        "player_abrv_name": "R.Smith",
+        "team": "TEN"
+    },
+    {
+        "player_abrv_name": "Sl.Griffin",
+        "team": "SEA"
+    },
+    {
+        "player_abrv_name": "Cs.Covington",
+        "team": "DAL"
+    },
+    {
+        "player_abrv_name": "Cn.Covington",
+        "team": "DAL"
+    }
+]

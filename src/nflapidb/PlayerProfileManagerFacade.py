@@ -21,7 +21,7 @@ class PlayerProfileManagerFacade(DataManagerFacade):
         recs = await rmgr.find()
         recs = await self._filterUnchangedRosters(recs, all)
         logging.info("Retrieving player profiles from NFL API...")
-        return await self.save(self._apiClient.getPlayerProfile(recs))
+        return await self.save(self._addRosterData(self._apiClient.getPlayerProfile(recs), recs))
 
     async def save(self, data : List[dict]) -> List[dict]:
         logging.info("Saving player profile data...")
@@ -46,6 +46,17 @@ class PlayerProfileManagerFacade(DataManagerFacade):
                      profile_ids : List[int] = None) -> List[dict]:
         return await super(PlayerProfileManagerFacade, self).delete(teams=teams,
                                                                     profile_ids=profile_ids)
+
+    def _addRosterData(self, profdata : List[dict], rostdata : List[dict]) -> List[dict]:
+        if profdata is not None and rostdata is not None and len(profdata) > 0 and len(rostdata) > 0:
+            rostidx = dict([(rostdata[i]["profile_id"], i) for i in range(0, len(rostdata))])
+            for pp in profdata:
+                pid = pp["profile_id"]
+                if pid in rostidx:
+                    r = rostdata[rostidx[pid]]
+                    if "previous_teams" in r:
+                        pp["previous_teams"] = r["previous_teams"]
+        return profdata
 
     @property
     def _rosterManager(self) -> RosterManagerFacade:

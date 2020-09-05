@@ -129,7 +129,7 @@ class MockScheduleManagerFacade(ScheduleManagerFacade):
         super(MockScheduleManagerFacade, self).__init__(entityManager)
         self._find_data = findData
 
-    async def find(self, qm : QueryModel) -> List[dict]:
+    async def find(self, qm : QueryModel = None) -> List[dict]:
         if qm is None:
             return self._find_data
         else:
@@ -153,19 +153,23 @@ class MockScheduleManagerFacade(ScheduleManagerFacade):
                 }
                 op = getop(d)
                 return fd[op]
-            gsid = fgsid = fin = ffin = None
-            for d in cnst["$and"]:
-                if "gsis_id" in d:
-                    vd = d["gsis_id"]
-                    k = getop(vd)
-                    gsid = vd[k]
-                    fgsid = getTestOp(vd)
-                elif "finished" in d:
-                    vd = d["finished"]
-                    k = getop(vd)
-                    fin = vd[k]
-                    ffin = getTestOp(vd)
-            return [r for r in self._find_data if fgsid(r["gsis_id"], gsid) and ffin(r["finished"], fin)]
+            def filter(d, k):
+                vd = d[k]
+                vo = getop(vd)
+                v = vd[vo]
+                f = getTestOp(vd)
+                return lambda r : f(r[k], v)
+            def buildFilters(d):
+                filters = []
+                for k in d:
+                    if k in ["gsis_id", "finished"]:
+                        filters.append(filter(d, k))
+                    elif isinstance(d[k], list):
+                        for fl in [buildFilters(cd) for cd in d[k]]:
+                            filters.extend(fl)
+                return filters
+            filters = buildFilters(cnst)
+            return [r for r in self._find_data if all([f(r) for f in filters])]
 
 class MockApiClient(nflapi.Client.Client):
     def __init__(self, gmplayData : List[dict]):

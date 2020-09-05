@@ -59,7 +59,25 @@ class TestRosterManagerFacade(unittest.TestCase):
         recs = util.runCoroutine(rmgr.sync())
         self.assertEqual(len(recs), len(srcdata) + len(histdata), "sync returned record count differs")
         dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
+        self.assertEqual(len(dbrecs), len(srcdata) + len(histdata), "db record count differs")
         self.assertEqual(dbrecs, recs, "db records differ")
+        self.assertEqual(rmgr._apiClient.getRequestedTeams(), set(["KC"]), "requested teams differs")
+
+    def test_sync_initializes_collection_with_historic_data_with_previous_team(self):
+        with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
+            srcdata = json.load(fp)
+        with open(os.path.join(os.path.dirname(__file__), "data", "roster_kc.json"), "rt") as fp:
+            histdata = json.load(fp)
+            for rec in histdata:
+                rec["team"] = "PIT"
+        rmgr = self._getMockRosterManager(teamData=[{"team": "KC"}], rosterData=srcdata, historicData=histdata)
+        recs = util.runCoroutine(rmgr.sync())
+        self.assertEqual(len(recs), len(srcdata) + len(histdata), "sync returned record count differs")
+        dbrecs = util.runCoroutine(self.entmgr.find(self.entityName))
+        self.assertEqual(len(dbrecs), len(srcdata), "db record count differs")
+        for rec in dbrecs:
+            self.assertTrue("previous_teams" in rec, "previous_teams not added to {}".format(rec["profile_id"]))
+            self.assertEqual(rec["previous_teams"], ["PIT"], "previous_teams value not equal for {}".format(rec["profile_id"]))
         self.assertEqual(rmgr._apiClient.getRequestedTeams(), set(["KC"]), "requested teams differs")
 
     def test__getHistoricData(self):

@@ -16,16 +16,19 @@ class ScheduleDependantManagerFacade(DataManagerFacade):
 
     async def sync(self) -> List[dict]:
         logging.info("Syncing {} data...".format(self._entity_name))
-        gsidqm = QueryModel()
-        gsidqm.sinclude(["gsis_id"])
-        cgsidd = await self.find(qm=gsidqm)
-        cgsids = list(set([r["gsis_id"] for r in cgsidd]))
-        schmgr = self._scheduleManager
-        schqm = QueryModel()
-        schqm.cstart("finished", True)
-        if len(cgsids) > 0:
-            schqm.cand("gsis_id", cgsids, Operator.NIN)
-        sch = await schmgr.find(qm=schqm)
+        cur = await self.find()
+        if len(cur) > 0:
+            gsidqm = QueryModel()
+            gsidqm.sinclude(["gsis_id"])
+            cgsidd = await self.find(qm=gsidqm)
+            cgsids = list(set([r["gsis_id"] for r in cgsidd]))
+            schqm = QueryModel()
+            schqm.cstart("finished", True)
+            if len(cgsids) > 0:
+                schqm.cand("gsis_id", cgsids, Operator.NIN)
+            sch = await self._scheduleManager.find(qm=schqm)
+        else:
+            sch = await self._scheduleManager.find()
         return await self.save(self._queryAPI(sch))
 
     @abstractmethod

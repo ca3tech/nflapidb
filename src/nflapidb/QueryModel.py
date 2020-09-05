@@ -52,6 +52,11 @@ class Operator:
         return dict([("$lte", value)])
 
     @staticmethod
+    def EXISTS(value : Any) -> dict:
+        """Attribute is or is not defined"""
+        return dict([("$exists", value)])
+
+    @staticmethod
     def negate(operator : callable) -> callable:
         return lambda v: dict([("$not", operator(v))])
 

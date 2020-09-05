@@ -128,7 +128,7 @@ class TestPlayerProfileManagerFacade(unittest.TestCase):
             rmap[pid]["team"] = t
             pmap[pid]["team"] = t
             usrcdata.append(pmap[pid])
-        rmgr = self._getMockPlayerProfileManager(rosterData=rmap.values(), profileData=usrcdata)
+        rmgr = self._getMockPlayerProfileManager(rosterData=list(rmap.values()), profileData=usrcdata)
         recs = util.runCoroutine(rmgr.sync(all=True))
         self.assertEqual(len(recs), len(usrcdata), "sync returned record count differs")
         dbrecs = util.runCoroutine(self.entmgr.find(self.entityName, projection={"_id": False}))
@@ -215,7 +215,7 @@ class MockRosterManagerFacade(RosterManagerFacade):
         self._find_data = findData
 
     async def find(self, *args) -> List[dict]:
-        return self._find_data
+        return self._find_data.copy()
 
 class MockApiClient(nflapi.Client.Client):
     def __init__(self, profileData : List[dict]):
